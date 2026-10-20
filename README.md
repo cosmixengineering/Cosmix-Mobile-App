@@ -1,60 +1,81 @@
 # Cosmix Mobile
 
-Architecture-only React Native + TypeScript project for Android and iOS.
+React Native CLI + TypeScript employee app, using the existing Cosmix .NET backend.
+The approved first slice is phone/SMS login, dashboard, Check In with server face
+and liveness verification, and location-based Check Out. Product direction and
+future supervisor/site staff/rider panels are recorded in
+[docs/Product-Direction.md](docs/Product-Direction.md). Customer features are deferred.
 
-- Desktop folder: `cosmix_mobile`
-- Native project name: `CosmixMobile`
-- npm package: `cosmix-mobile`
-- Development application identifier: `com.cosmix.mobile` (confirm before distribution)
-- React Native: `0.87.1`, matching the existing mobile reference stack
+The source now also includes a shared Employee Services hub: leave and policy
+balances, advances/loans and repayment details, resignation intake, allowances,
+vehicle activity/claims, attendance corrections, overtime, encashment, monthly
+attendance, full punch/payroll history, profile/assigned items, finances and inbox. See
+[docs/Employee-Self-Service.md](docs/Employee-Self-Service.md) for contracts and
+access requirements. The owner subsequently authorized builds and testing.
+Android x86_64 debug compilation, source checks, backend Release publishing and
+the emulator login/HTTPS smoke test pass. The SMS provider remains absent, so
+successful employee sign-in and real biometric attendance are not accepted yet.
+See [the verification record](docs/Verification-20261020.md) for exact evidence
+and limits.
 
-There are **no mock screens, sample dashboards, role-specific folders or business implementations**. The app entry intentionally returns `null` and renders no application UI. This is a project foundation, not a finished mobile app.
+The authenticated workspace now has five tabs: Home, Services, Attendance,
+History and Profile. The shared circular bottom bar follows the owner's visual
+reference. History provides permission-aware category buttons for Check In/Out,
+leave, advances/loans, allowances, overtime, corrections, monthly attendance,
+payroll, encashment, vehicle activity and resignation. Dates and pagination reach
+older records. Check In/Out receipts show the full server-recorded date and time,
+including year and seconds, explicitly in Asia/Karachi. The result remains
+separate from the recorded time; pending/rejected receipts are not success.
+Request forms remain above the tabs, and attendance locks tab changes while
+verification/submission runs. Profile uses the actual own-profile endpoint.
 
-## Folder guide
+Login and verification use shared reference-inspired authentication controls:
+Pakistan/+92 phone entry, rounded white cards, indigo actions, a Need help sheet
+and six OTP cells backed by one native secure/autofill-capable input. Local 03…,
+national 3…, +92/0092 paste formats and Urdu/Arabic numerals normalize before
+the existing OTP API call. Code visibility is an explicit user choice. Resend
+cooldown/expiry and single-flight request guards remain enforced. Motion
+respects Reduce Motion and pauses on background/blur; no new dependency or
+alternate authentication provider was added.
 
-```text
-src/
-  app/
-    App.tsx           application entry; no screen mounted
-    providers/        future shared providers
-  assets/
-    fonts/
-    icons/
-    images/
-  auth/               future sign-in/session integration
-  components/
-    feedback/         shared loading/error components
-    forms/            reusable form controls
-    layout/           shared layout building blocks
-    ui/               reusable basic controls
-  config/             application configuration
-  constants/          shared constants
-  hooks/              reusable React hooks
-  navigation/         future navigation configuration
-  screens/            future approved application screens
-  services/
-    api/              backend communication
-    storage/          device storage adapters
-  theme/              design tokens and shared styling
-  types/              shared TypeScript contracts
-  utils/              pure reusable helpers
-android/              native Android project
-ios/                  native iOS project
-```
+The login illustration now uses the supplied Cosmix Engineering logo as a
+bundled transparent HD PNG. Shared controls add logo entrance/float motion,
+soft ambient movement, animated field focus/format feedback and gradient actions
+with press feedback. Motion remains gated by the existing accessibility and
+screen/application lifecycle controls.
 
-Empty folders contain `.gitkeep` so Git retains them. Screens belong in `screens`, shared controls in `components`, and backend calls in `services/api`. Do not create separate employee/customer copies of the application. Roles and permissions should control approved access at runtime, with enforcement in .NET.
+## Structure
 
-There is no navigation library, state-management framework, HTTP wrapper or device SDK implementation yet. Add only what an approved feature needs.
+Shared source folders serve all approved employee roles; .NET permissions and
+record scopes remain authoritative.
 
-## Repository
+| Folder                                       | Responsibility                               |
+| -------------------------------------------- | -------------------------------------------- |
+| `src/app`                                    | App composition, services and privacy cover  |
+| `src/auth`                                   | OTP and protected session lifecycle          |
+| `src/screens`                                | Login, dashboard, attendance and services    |
+| `src/navigation`                             | Typed authenticated/anonymous navigation     |
+| `src/components`, `src/theme`                | Shared accessible controls and visual tokens |
+| `src/hooks`                                  | Scoped server reads and mutation state       |
+| `src/services/api`                           | Fixed HTTPS transport and safe errors        |
+| `src/services/attendance`                    | Face/capture/proof/punch coordination        |
+| `src/services/selfService`, `documents`      | Self APIs, exact request retry and evidence  |
+| `src/services/camera`, `location`, `storage` | Native adapters                              |
+| `src/types`, `src/utils`                     | Contracts and pure validation                |
+| `android`, `ios`                             | Native projects                              |
 
-- Repository: [Cosmix-Mobile-App](https://github.com/cosmixengineering/Cosmix-Mobile-App)
-- Foundation branch: `codex/mobile-foundation`
-- Keep dependencies, generated output, local environment files and production signing keys out of Git.
+React Native is pinned to 0.87.1. Dependencies are pinned in package-lock.json.
+The development identifier is `com.cosmix.mobile`; production signing and
+identifiers must be finalized before distribution. The existing branch is
+`codex/mobile-foundation` in [Cosmix-Mobile-App](https://github.com/cosmixengineering/Cosmix-Mobile-App).
 
-## Development
+## Running the Android development app
 
-Use Node.js 24 with npm.
+The dependency lock was installed with lifecycle scripts disabled. The document
+picker is included in the verified Android native build; actual document
+selection/upload still requires authenticated device acceptance.
+
+Use Node24, JDK17, the Android SDK and an Android emulator.
 
 ```powershell
 npm ci
@@ -62,39 +83,90 @@ npm run verify
 npm start
 ```
 
-In a second terminal, after Android Studio, the supported JDK/SDK and an emulator or device are configured:
+In another terminal, with platform-tools on PATH:
 
 ```powershell
-npm run android
+adb reverse tcp:8081 tcp:8081
+npm run android -- --active-arch-only
 ```
 
-For iOS, use macOS with Xcode and CocoaPods. Install Ruby/CocoaPods dependencies with `bundle install` at the project root, then `bundle exec pod install` inside `ios`; run `npm run ios` from the root. Native build commands require the platform toolchains. TypeScript/lint success does not verify a native build.
+Metro listens only on host loopback. Android debug code uses `localhost:8081`
+through adb reverse. React Native debug tooling may show a nearby-network
+permission prompt on Android 17; the release dependency does not declare that
+debug permission. See the official [React Native setup](https://reactnative.dev/docs/set-up-your-environment).
 
-See the official [React Native environment setup](https://reactnative.dev/docs/set-up-your-environment) and [CLI setup guide](https://reactnative.dev/docs/getting-started-without-a-framework).
+`src/config/environment.ts` contains the public emulator API target:
+`https://10.0.2.2:7241`. This is the host laptop's .NET API, which calls the
+Ubuntu face provider. It is not a direct CompreFace/model endpoint. Start that
+API with the existing normal development configuration and an HTTPS certificate
+whose SAN includes 10.0.2.2. Certificate keys/passwords remain outside this repo.
+For this dedicated loopback preview, set process-local `AllowedHosts` to
+`localhost;127.0.0.1;10.0.2.2`. The default backend accepts only localhost and
+otherwise rejects the emulator hostname with HTTP 400. Keep the listener bound
+to loopback and retain the hostname allowlist; do not use a wildcard.
+The checked-in **public** local CA is trusted only by the Android debug variant,
+only for that emulator host. Release configuration trusts system CAs and denies
+cleartext. No `trusty`, permissive trust manager or hostname bypass is enabled.
 
-## Verification
+On this Windows host Java's AF_UNIX wakeup pipe failed with `Invalid argument:
+connect`. A process-local `jdk.net.unixdomain.tmpdir` pointing to an existing
+regular file makes OpenJDK's documented-source fallback use a TCP pipe. This was
+used only for local Gradle invocation; no machine-wide Java setting was changed.
+If needed, set JAVA_TOOL_OPTIONS for that build invocation to
+`-Djdk.net.unixdomain.tmpdir=<absolute path to android/gradle.properties>`.
+[OpenJDK PipeImpl source](https://github.com/openjdk/jdk17u/blob/master/src/java.base/windows/classes/sun/nio/ch/PipeImpl.java)
+contains the fallback logic.
 
-Verified on 2026-10-05:
+## Security and attendance behavior
 
-- `npm run verify` passed: ESLint, Prettier and TypeScript.
-- React Native CLI resolves both native projects and the Android application identifier correctly.
-- Application JSON and modified native XML configuration parse successfully.
-- No role-specific directories, mock screens, template test files or artifacts directory are present.
-- Android/iOS native builds, installation on a device and actual runtime behavior were not exercised. No Metro server was left running.
-- Dependency audit is not clean; see the advisory below.
+- Login uses registered phone + real server OTP. No SMS provider is configured
+  yet, so the normal backend rejects login with 503 `authentication_unavailable`.
+  No mock OTP, shared password, hidden account or face-login substitute is added.
+- Access tokens stay in memory. Refresh and installation secrets use the OS
+  Keychain/Keystore. Refresh is serialized; uncertain rotation requires a fresh
+  sign-in rather than replaying a potentially consumed secret.
+- The server owns permissions, device approval, enrollment, schedules, location
+  policy, face matching, liveness and punch acceptance. The mobile app never
+  contains CompreFace administrator credentials or an API key.
+- Check In obtains a server challenge and uses a camera photo, normalized JPEG,
+  protected upload, server verification and fresh location. A failed/expired
+  face result cannot submit a punch. Check Out does not capture a face.
+- Temporary camera files stay in app cache and are cleaned after capture. No
+  image is saved to the gallery or persisted in app state. Cache cleanup after
+  an OS crash is not guaranteed. JavaScript strings are not securely erasable.
+- Uncertain punch submissions keep their exact key and body in secure storage.
+  An explicit retry reconciles that submission; it never silently creates a new
+  punch. Only an explicit `Accepted` receipt is presented as ordinary success.
+  Review, rejection and exception results remain distinct.
+- Camera and precise foreground location are requested when needed. No
+  background location or microphone permission is requested. Known simulated
+  location is rejected, including in an emulator.
+- Background views have a privacy cover. Android release windows additionally
+  block screenshots. Android backups are disabled. No tokens, OTPs or face
+  payloads are logged. A production API URL and release signing are still pending.
+
+## Verification and remaining acceptance
+
+See [docs/Employee-Attendance-Implementation.md](docs/Employee-Attendance-Implementation.md)
+and [docs/Verification-20261020.md](docs/Verification-20261020.md)
+for current evidence. A successful source check or debug build does not prove
+real biometric attendance acceptance. Real login requires an SMS provider and
+an eligible employee/device. Full acceptance also needs HR enrollment, approved
+attendance policy/roster/site settings, and consented physical-device camera,
+print/replay and location testing. iOS builds require macOS/Xcode/CocoaPods and
+have not been verified on this Windows machine.
+
+There is no permanent test suite or generated screenshot/artifact folder in the
+repo, following the project instruction. Temporary regression checks and build
+outputs stay outside Git. No commit, push or release deployment is included.
 
 ## Dependency advisory
 
-Checked on 2026-10-05: `npm audit` reports 20 high-severity dependency entries tracing to the same unpatched `braces` advisory, [GHSA-vfj7-8cjw-p6xm](https://github.com/advisories/GHSA-vfj7-8cjw-p6xm). The installed/latest `braces` version is 3.0.3; the advisory lists no patched version. The dependency is used through CLI/Metro file-pattern tooling. App-runtime exploitability has not been assessed.
-
-The suggested forced fix downgrades React Native/CLI to older incompatible versions, so it was not applied. Do not accept untrusted glob patterns or expose Metro publicly. Recheck upstream fixes and review the dependency risk before production. Successful source checks do not resolve this advisory.
-
-## Boundaries
-
-- No demo data, authentication bypass, device permissions or attendance workflows are implemented.
-- Keep credentials, signing keys, real employee information and face data out of source control. Device bundles cannot protect embedded API secrets.
-- Tokens require an approved OS-protected storage solution; ordinary storage is not a credential vault.
-- Camera, location, face verification, background tasks, notification permissions and offline behavior require separate approved implementation.
-- The bundled Android debug keystore is the public development-only template key. Release signing is not configured. iOS signing and production app identifiers also need approval.
-- No test suite, screenshot/artifact folder or running preview server is part of this foundation. GitHub publishing was authorized separately by the project manager.
-- The web/frontend, backend and original mobile mockup were not modified.
+Prior attendance-slice audit, checked 20 October 2026: 21 high dependency entries trace to the same
+[braces stack-exhaustion advisory](https://github.com/advisories/GHSA-vfj7-8cjw-p6xm),
+with no patched version reported for the installed 3.0.3. The chain runs through
+CLI/Metro file-pattern tooling and React Native peer dependencies. Runtime
+exploitability has not been assessed. The suggested forced fix downgrades
+React Native/CLI incompatibly, so it was not applied. Do not accept untrusted
+glob patterns or expose Metro publicly; review this risk before production.
+This audit was not rerun after adding the document-picker dependency metadata.

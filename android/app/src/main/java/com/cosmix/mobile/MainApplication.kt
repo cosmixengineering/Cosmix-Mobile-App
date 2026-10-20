@@ -22,6 +22,11 @@ class MainApplication : Application(), ReactApplication {
 
   override fun onCreate() {
     super.onCreate()
+    if (BuildConfig.DEBUG) {
+      // adb reverse keeps Metro on loopback for both emulators and USB devices.
+      getSharedPreferences("${packageName}_preferences", MODE_PRIVATE).edit()
+          .putString("debug_http_host", "localhost:8081").apply()
+    }
     loadReactNative(this)
   }
 }
