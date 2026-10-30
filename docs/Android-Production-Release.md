@@ -28,3 +28,9 @@ References: [Android network security configuration](https://developer.android.c
 React Native's generated C++ filenames can exceed Ninja's Windows path limit in a long checkout directory. On Windows, the app stages CMake intermediates in `<Gradle user home>/cosmix-native/<checkout-path hash>` and sets `CMAKE_OBJECT_PATH_MAX=240`, which lets CMake shorten object paths using its deterministic hash. Separate checkout paths receive separate staging directories. Linux paths and signing remain unchanged. See [CMake's object path limit](https://cmake.org/cmake/help/latest/variable/CMAKE_OBJECT_PATH_MAX.html).
 
 For an x86_64 Android emulator, use `gradlew.bat :app:assembleDebug -PreactNativeArchitectures=x86_64`. This verifies that ABI only; omit the architecture override when building the complete configured ABI set. Build intermediates are disposable caches, not release artifacts.
+
+## Local emulator and USB verification
+
+Debug builds use `https://localhost:7241` for the API. With the selected device connected, run `adb reverse tcp:7241 tcp:7241` and `adb reverse tcp:8081 tcp:8081` before launching the app. Select the intended device with `adb -s <serial>` when more than one is connected. The HTTPS API still needs a localhost SAN certificate issued by the public development CA already bundled in the debug resources.
+
+This preserves the backend's local-testing hostname and loopback restrictions. Connecting that guarded test profile through `10.0.2.2` instead returns a rejected-host response even when TLS succeeds. Do not widen the test host's guard or use a wildcard host to accommodate the emulator. Production continues to use the approved release origin and release-only certificate policy; ADB forwarding and debug CA trust are not production deployment steps.
