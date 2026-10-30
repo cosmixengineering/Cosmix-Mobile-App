@@ -22,3 +22,9 @@ For the LAN deployment, build after IIS has its real certificate and current/bac
 Before distributing, verify the resulting APK/AAB signature against the approved fingerprint, inspect the merged release manifest/network policy, and exercise login, private document download, camera/attendance and upgrade behavior with the production-like server. Confirm that a valid chain with the wrong public key is rejected. These device/TLS/distribution checks need the approved host, pins and signing material and are not replaced by source tests.
 
 References: [Android network security configuration](https://developer.android.com/privacy-and-security/security-config), [Android app signing](https://developer.android.com/studio/publish/app-signing).
+
+## Windows native builds
+
+React Native's generated C++ filenames can exceed Ninja's Windows path limit in a long checkout directory. On Windows, the app stages CMake intermediates in `<Gradle user home>/cosmix-native/<checkout-path hash>` and sets `CMAKE_OBJECT_PATH_MAX=240`, which lets CMake shorten object paths using its deterministic hash. Separate checkout paths receive separate staging directories. Linux paths and signing remain unchanged. See [CMake's object path limit](https://cmake.org/cmake/help/latest/variable/CMAKE_OBJECT_PATH_MAX.html).
+
+For an x86_64 Android emulator, use `gradlew.bat :app:assembleDebug -PreactNativeArchitectures=x86_64`. This verifies that ABI only; omit the architecture override when building the complete configured ABI set. Build intermediates are disposable caches, not release artifacts.
