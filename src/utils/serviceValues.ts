@@ -96,7 +96,11 @@ export function dateRange(from: string, to: string): string[] {
     new Date(start + index * 86400000).toISOString().slice(0, 10),
   );
 }
-export function reason(value: string, maximum = 1000): string {
+export function reason(
+  value: string,
+  maximum = 1000,
+  error = 'invalid_request_reason',
+): string {
   const result = value.trim().replace(/\s+/g, ' ');
   if (
     !result ||
@@ -106,7 +110,7 @@ export function reason(value: string, maximum = 1000): string {
         character.charCodeAt(0) < 32 || character.charCodeAt(0) === 127,
     )
   ) {
-    throw new AppError('invalid_request_reason');
+    throw new AppError(error);
   }
   return result;
 }

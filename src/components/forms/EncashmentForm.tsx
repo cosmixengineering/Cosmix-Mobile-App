@@ -39,7 +39,7 @@ export function EncashmentForm(): React.JSX.Element {
     <SubmissionFrame
       service="encashment"
       title="Leave encashment request"
-      description="Choose a published policy and its fiscal year. Your company evaluates eligibility and value."
+      description="Choose a date in the completed leave year and the policy that applied then. Your company checks eligibility and calculates the amount."
       route="/api/v1/leaves/mine/encashment"
       revision={JSON.stringify([
         date,
@@ -73,7 +73,7 @@ export function EncashmentForm(): React.JSX.Element {
           body: {
             requestedMinutes: Number(minutes),
             leaveYearStart: start,
-            leaveYearEnd: last,
+            leaveYearEnd: exclusive,
             reason: clean,
             leaveTypeId: type,
             policyVersionId: policy,

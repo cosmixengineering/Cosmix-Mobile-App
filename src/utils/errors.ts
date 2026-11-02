@@ -10,6 +10,21 @@ export class AppError extends Error {
 }
 
 const messages: Record<string, string> = {
+  encashment_completed_leave_year_required:
+    'Choose a policy reference date in a completed leave year.',
+  encashment_submission_window_closed:
+    'The request window for this leave year has closed.',
+  encashment_finalized_kpi_required:
+    'Ask HR to finalize your KPI score for the completed leave year before requesting encashment.',
+  invalid_vehicle_origin: 'Enter the trip origin (up to 200 characters).',
+  invalid_vehicle_destination:
+    'Enter the trip destination (up to 200 characters).',
+  invalid_vehicle_work:
+    'Enter the work or job reference (up to 150 characters).',
+  invalid_vehicle_evidence:
+    'Enter the supporting evidence reference (up to 500 characters).',
+  invalid_vehicle_workshop:
+    'Enter the authorized workshop reference (up to 200 characters).',
   invalid_date: 'Choose a valid date in YYYY-MM-DD format.',
   invalid_time: 'Enter a valid company time in HH:mm format.',
   invalid_date_range: 'Choose an ordered date range of no more than 366 days.',
@@ -135,15 +150,37 @@ export function errorCode(error: unknown): string {
   return 'unknown_error';
 }
 
+const maintenanceMilestone =
+  /^maintenance_milestone_not_reached:(\d{1,10}(?:\.\d{1,3})?)km_of_(\d{1,10}(?:\.\d{1,3})?)km$/;
+
+export function apiProblemCode(candidate: unknown, fallback: string): string {
+  return typeof candidate === 'string' &&
+    (/^[A-Za-z0-9_.-]{1,120}$/.test(candidate) ||
+      maintenanceMilestone.test(candidate))
+    ? candidate
+    : fallback;
+}
+
+function knownMessage(code: string): string | undefined {
+  const mileage = maintenanceMilestone.exec(code);
+  if (mileage) {
+    return `Approved outstation travel totals ${mileage[1]} km. This maintenance milestone requires ${mileage[2]} km.`;
+  }
+  return Object.prototype.hasOwnProperty.call(messages, code)
+    ? messages[code]
+    : undefined;
+}
+
 export function describeError(error: unknown): string {
   return (
-    messages[errorCode(error)] ??
+    knownMessage(errorCode(error)) ??
     'This action could not be completed. Please try again or contact your supervisor.'
   );
 }
 
 export function messageForCode(code: string): string {
   return (
-    messages[code] ?? 'Please contact your supervisor if this issue continues.'
+    knownMessage(code) ??
+    'Please contact your supervisor if this issue continues.'
   );
 }

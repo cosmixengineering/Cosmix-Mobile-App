@@ -56,7 +56,10 @@ export function VehicleRequestForm({
   const chosen = trips.find(row => row.id === trip && row.state === 'Approved');
   const update = (name: string, value: string) =>
     setValues(current => ({ ...current, [name]: value }));
-  const str = (name: string, max = 500) => reason(values[name] ?? '', max);
+  const str = (
+    name: 'origin' | 'destination' | 'work' | 'workshop' | 'evidence',
+    max = 500,
+  ) => reason(values[name] ?? '', max, `invalid_vehicle_${name}`);
   const number = (name: string, max = 1000000) =>
     moneyInput(values[name] ?? '', 0, max);
   return (
@@ -98,8 +101,8 @@ export function VehicleRequestForm({
           }
           summary.push(text(assigned.registrationNumber), date);
           if (kind === 'trip') {
-            const startedAt = companyInstant(date, str('start', 5));
-            const endedAt = companyInstant(endDate, str('end', 5));
+            const startedAt = companyInstant(date, values.start?.trim() ?? '');
+            const endedAt = companyInstant(endDate, values.end?.trim() ?? '');
             const odometerStartKm = number('odometerStart');
             const odometerEndKm = number('odometerEnd');
             if (
@@ -159,7 +162,7 @@ export function VehicleRequestForm({
           } else {
             body = {
               vehicleCustodyId: assigned.id,
-              occurredAt: companyInstant(date, str('start', 5)),
+              occurredAt: companyInstant(date, values.start?.trim() ?? ''),
               incidentEvidenceReference: str('evidence'),
               thirdPartyDetailsReference: values.thirdParty?.trim() || null,
               insuranceClaimReference: values.insurance?.trim() || null,

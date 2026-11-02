@@ -128,6 +128,7 @@ export function SubmissionFrame({
           <Text style={layout.body}>{description}</Text>
         </>
       )}
+      {!submitted && children(busy)}
       <RequestFeedback
         error={mutation.error || error}
         receipt={mutation.receipt}
@@ -137,7 +138,6 @@ export function SubmissionFrame({
       />
       {!submitted ? (
         <>
-          {children(busy)}
           {prepared ? (
             <View style={layout.card}>
               <Text style={layout.heading}>Review your request</Text>

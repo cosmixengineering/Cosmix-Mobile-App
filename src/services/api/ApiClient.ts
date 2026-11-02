@@ -1,4 +1,4 @@
-import { AppError } from '../../utils/errors';
+import { apiProblemCode, AppError } from '../../utils/errors';
 import { isRecord, validateApiBaseUrl } from '../../utils/validation';
 
 export type RequestOptions = {
@@ -106,11 +106,7 @@ export class ApiClient implements BackendApi {
       // Existing API failures carry the machine code in ProblemDetails.title.
       // Accept only code-shaped strings; presentation uses our own message map.
       const candidate = isRecord(data) ? data.code ?? data.title : undefined;
-      const code =
-        typeof candidate === 'string' &&
-        /^[A-Za-z0-9_.-]{1,120}$/.test(candidate)
-          ? candidate
-          : defaultCode;
+      const code = apiProblemCode(candidate, defaultCode);
       const reference =
         isRecord(data) &&
         typeof data.correlationId === 'string' &&
