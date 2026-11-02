@@ -1,0 +1,5 @@
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:drawable="@color/cosmix_launcher_navy" />
+    <item android:width="144dp" android:height="144dp" android:gravity="center"
+        android:drawable="@drawable/cosmix_launcher_art" />
+</layer-list>

@@ -122,19 +122,19 @@ export function AuthBrandLogo(): React.JSX.Element {
 
 const styles = StyleSheet.create({
   frame: {
-    minHeight: 142,
+    minHeight: 94,
     alignItems: 'center',
     justifyContent: 'center',
     marginVertical: 6,
   },
-  logo: { width: '100%', maxWidth: 300 },
-  imageFrame: { width: '100%', height: 124 },
+  logo: { width: '100%', maxWidth: 220 },
+  imageFrame: { width: '100%', height: 84 },
   image: { width: '100%', height: '100%', backgroundColor: 'transparent' },
   glow: {
     position: 'absolute',
     width: '85%',
-    height: 92,
+    height: 66,
     borderRadius: 100,
-    backgroundColor: '#F1EEFB',
+    backgroundColor: '#ECF2FA',
   },
 });

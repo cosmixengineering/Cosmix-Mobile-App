@@ -15,7 +15,20 @@
                     <view key="view" contentMode="scaleToFill" id="Ze5-6b-2t3">
                         <rect key="frame" x="0.0" y="0.0" width="375" height="667"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
-                        <color key="backgroundColor" systemColor="systemBackgroundColor" cocoaTouchSystemColor="whiteColor"/>
+                        <subviews>
+                            <imageView userInteractionEnabled="NO" contentMode="scaleAspectFit" image="CosmixSplash" translatesAutoresizingMaskIntoConstraints="NO" id="sPL-aS-H01">
+                                <rect key="frame" x="115.5" y="261.5" width="144" height="144"/>
+                                <constraints>
+                                    <constraint firstAttribute="width" constant="144" id="sPL-wd-001"/>
+                                    <constraint firstAttribute="height" constant="144" id="sPL-ht-001"/>
+                                </constraints>
+                            </imageView>
+                        </subviews>
+                        <color key="backgroundColor" red="0.1333333333" green="0.1254901961" blue="0.3647058824" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+                        <constraints>
+                            <constraint firstItem="sPL-aS-H01" firstAttribute="centerX" secondItem="Ze5-6b-2t3" secondAttribute="centerX" id="sPL-cx-001"/>
+                            <constraint firstItem="sPL-aS-H01" firstAttribute="centerY" secondItem="Ze5-6b-2t3" secondAttribute="centerY" id="sPL-cy-001"/>
+                        </constraints>
                         <viewLayoutGuide key="safeArea" id="Bcu-3y-fUS"/>
                     </view>
                 </viewController>
@@ -24,4 +37,7 @@
             <point key="canvasLocation" x="52.173913043478265" y="375"/>
         </scene>
     </scenes>
+    <resources>
+        <image name="CosmixSplash" width="384" height="384"/>
+    </resources>
 </document>

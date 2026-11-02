@@ -7,8 +7,14 @@ import type {
 import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
+export type HomeStackParams = {
+  HomeOverview: undefined;
+  MySchedule: undefined;
+  ApplyLeave: undefined;
+};
+
 export type WorkspaceTabParams = {
-  Dashboard: undefined;
+  Dashboard: NavigatorScreenParams<HomeStackParams> | undefined;
   Services: undefined;
   Attendance: undefined;
   History: { category?: ServiceKey } | undefined;

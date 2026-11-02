@@ -96,6 +96,7 @@ In another terminal, with platform-tools on PATH:
 
 ```powershell
 adb reverse tcp:8081 tcp:8081
+adb reverse tcp:7241 tcp:7241
 npm run android -- --active-arch-only
 ```
 
@@ -104,15 +105,15 @@ through adb reverse. React Native debug tooling may show a nearby-network
 permission prompt on Android 17; the release dependency does not declare that
 debug permission. See the official [React Native setup](https://reactnative.dev/docs/set-up-your-environment).
 
-`src/config/environment.ts` contains the public emulator API target:
-`https://10.0.2.2:7241`. This is the host laptop's .NET API, which calls the
-Ubuntu face provider. It is not a direct CompreFace/model endpoint. Start that
-API with the existing normal development configuration and an HTTPS certificate
-whose SAN includes 10.0.2.2. Certificate keys/passwords remain outside this repo.
-For this dedicated loopback preview, set process-local `AllowedHosts` to
-`localhost;127.0.0.1;10.0.2.2`. The default backend accepts only localhost and
-otherwise rejects the emulator hostname with HTTP 400. Keep the listener bound
-to loopback and retain the hostname allowlist; do not use a wildcard.
+`assembleDebug` packages JavaScript and assets inside the APK so it can open
+when Metro is offline. Rebuild and reinstall the APK to pick up source changes
+when using the bundled copy.
+
+The debug app calls the laptop API at `https://localhost:7241` through the
+second port forward above. Start the API with its localhost HTTPS certificate.
+The API calls the Ubuntu face provider. Certificate keys and passwords stay
+outside this repository. The default localhost host allowlist supports this
+setup. Keep the API listener bound to loopback.
 The checked-in **public** local CA is trusted only by the Android debug variant,
 only for that emulator host. Release configuration trusts system CAs and denies
 cleartext. No `trusty`, permissive trust manager or hostname bypass is enabled.
@@ -149,10 +150,7 @@ contains the fallback logic.
   An explicit retry reconciles that submission; it never silently creates a new
   punch. Only an explicit `Accepted` receipt is presented as ordinary success.
   Review, rejection and exception results remain distinct.
-- On authenticated entry, the current published location notice must be checked
-  and accepted explicitly for its displayed version. Foreground and attendance
-  actions recheck policy; unavailable checks offer retry or sign-out. No active
-  notice blocks the workspace and attendance callbacks until HR publishes one.
+- Employees with verified grants only for known non-location services can enter the workspace. Their location check always denies collection. Location-capable accounts and empty or unknown permission sets still require an active notice and explicit consent to its displayed version. Foreground and attendance actions recheck the policy. Failed checks require retry or sign-out.
 - Camera and precise foreground location are requested when needed. No
   background location or microphone permission is requested. Known simulated
   location is rejected, including in an emulator. Session checks after native

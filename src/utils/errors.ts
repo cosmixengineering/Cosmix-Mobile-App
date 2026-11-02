@@ -100,7 +100,7 @@ const messages: Record<string, string> = {
   face_provider_unavailable:
     'Face verification is temporarily unavailable. Please try again later.',
   face_verification_failed:
-    'Your face could not be verified. Use good lighting and keep one face in view.',
+    'Check-in was not recorded. Before retrying, move away from a bright background and make sure your whole face is clearly visible. If this continues, contact your supervisor.',
   face_challenge_expired:
     'The face verification window has expired. Please take a new photo.',
   face_retry_limit_reached:

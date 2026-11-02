@@ -23,14 +23,31 @@ function asciiDigits(value: string): string {
   );
 }
 
-export function normalizePakistanPhoneNumber(input: string): string {
+function pakistanNationalNumber(input: string): string {
   let national = asciiDigits(input)
     .trim()
     .replace(/[ ()-]/g, '');
   if (national.startsWith('+92')) national = national.slice(3);
   else if (national.startsWith('0092')) national = national.slice(4);
-  else if (/^923\d{9}$/.test(national)) national = national.slice(2);
+  else if (/^923/.test(national)) national = national.slice(2);
   else if (national.startsWith('0')) national = national.slice(1);
+  return national;
+}
+
+export function editPakistanMobileNumber(
+  input: string,
+): { digits: string } | { error: string } {
+  const digits = pakistanNationalNumber(input);
+  if (!/^\d*$/.test(digits))
+    return { error: 'Use digits only and the Pakistan calling code +92.' };
+  if (digits.length > 10) return { error: 'Enter only 10 digits after +92.' };
+  if (digits.length > 0 && !digits.startsWith('3'))
+    return { error: 'A Pakistan mobile number starts with 3 after +92.' };
+  return { digits };
+}
+
+export function normalizePakistanPhoneNumber(input: string): string {
+  const national = pakistanNationalNumber(input);
   if (!/^3\d{9}$/.test(national)) throw new AppError('invalid_pakistan_phone');
   return normalizePhoneNumber(`+92${national}`);
 }

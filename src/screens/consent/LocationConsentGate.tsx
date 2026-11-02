@@ -7,7 +7,8 @@ import React, {
   useState,
 } from 'react';
 import { AppState, StyleSheet, Text, View } from 'react-native';
-import { useServices } from '../../app/AppProvider';
+import { useServices, useSession } from '../../app/AppProvider';
+import { nonLocationWorkspace } from '../../services/consent/workspaceAccess';
 import { Button, Notice, Screen } from '../../components/Controls';
 import {
   LocationConsentService,
@@ -25,6 +26,25 @@ export function useLocationConsentCheck() {
 
 // Mounted with a session key: no previous employee's policy result survives login.
 export function LocationConsentGate({
+  children,
+}: React.PropsWithChildren): React.JSX.Element {
+  const session = useSession();
+  if (
+    session.status === 'authenticated' &&
+    nonLocationWorkspace(session.permissions)
+  ) {
+    return (
+      <ConsentContext.Provider value={denyLocation}>
+        {children}
+      </ConsentContext.Provider>
+    );
+  }
+  return <RequiredLocationConsent>{children}</RequiredLocationConsent>;
+}
+
+const denyLocation = async () => false;
+
+function RequiredLocationConsent({
   children,
 }: React.PropsWithChildren): React.JSX.Element {
   const { session } = useServices();

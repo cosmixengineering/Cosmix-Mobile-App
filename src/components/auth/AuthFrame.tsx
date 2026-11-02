@@ -117,10 +117,10 @@ const styles = StyleSheet.create({
   card: {
     width: '100%',
     maxWidth: 460,
-    borderRadius: 34,
-    padding: 24,
+    borderRadius: 18,
+    padding: 16,
     backgroundColor: authColors.card,
-    gap: 20,
-    boxShadow: '0 12px 45px rgba(45, 39, 101, 0.06)',
+    gap: 12,
+    boxShadow: '0 2px 8px rgba(21, 33, 61, 0.05)',
   },
 });

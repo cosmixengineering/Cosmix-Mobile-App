@@ -115,7 +115,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 24,
+    padding: 14,
   },
   loadingText: {
     color: colors.muted,
@@ -132,7 +132,7 @@ const styles = StyleSheet.create({
     borderColor: colors.line,
     borderRadius: 12,
     backgroundColor: colors.background,
-    padding: 12,
+    padding: 10,
     marginBottom: 12,
   },
   noticeContent: {
@@ -146,7 +146,7 @@ const styles = StyleSheet.create({
   checkboxRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 10,
   },
   checkbox: {
     width: 22,

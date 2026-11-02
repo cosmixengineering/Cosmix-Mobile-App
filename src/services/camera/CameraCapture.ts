@@ -25,9 +25,9 @@ export class CameraCapture {
         saveToPhotos: false,
         includeBase64: false,
         includeExtra: false,
-        quality: 0.9,
-        maxWidth: 1600,
-        maxHeight: 1600,
+        // Keep the native camera JPEG until the metadata-stripping resize below.
+        // Re-encoding here would discard face texture before liveness inference.
+        quality: 1,
       });
       if (result.didCancel) {
         throw new AppError('camera_cancelled');
@@ -62,7 +62,7 @@ export class CameraCapture {
       ensureCurrent();
       if (prepared.size > 512 * 1024) {
         prepared = await ImageResizer.createResizedImage(
-          prepared.uri,
+          asset.uri,
           640,
           640,
           'JPEG',

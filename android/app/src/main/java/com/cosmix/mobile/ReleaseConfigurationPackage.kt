@@ -10,7 +10,10 @@ import com.facebook.react.module.model.ReactModuleInfoProvider
 /** Public configuration from the same native build that carries the pinned network policy. */
 class ReleaseConfigurationModule(context: ReactApplicationContext) : ReactContextBaseJavaModule(context) {
   override fun getName() = "CosmixReleaseConfiguration"
-  override fun getConstants(): Map<String, Any> = mapOf("apiBaseUrl" to BuildConfig.COSMIX_API_BASE_URL)
+  override fun getConstants(): Map<String, Any> = mapOf(
+    "apiBaseUrl" to BuildConfig.COSMIX_API_BASE_URL,
+    "isDebugBuild" to BuildConfig.DEBUG,
+  )
 }
 
 class ReleaseConfigurationPackage : BaseReactPackage() {

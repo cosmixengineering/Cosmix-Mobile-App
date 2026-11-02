@@ -30,8 +30,19 @@ const serviceFor: Record<RequestKind, ServiceKey> = {
 export function RequestFormScreen({
   route,
 }: NativeStackScreenProps<RootStackParams, 'RequestForm'>): React.JSX.Element {
-  const auth = useSession();
   const { kind, previousRequestId } = route.params;
+  return (
+    <EmployeeRequestForm kind={kind} previousRequestId={previousRequestId} />
+  );
+}
+export function EmployeeRequestForm({
+  kind,
+  previousRequestId,
+}: {
+  kind: RequestKind;
+  previousRequestId?: string;
+}): React.JSX.Element {
+  const auth = useSession();
   if (!canOpenService(serviceFor[kind], auth)) {
     return (
       <Screen>

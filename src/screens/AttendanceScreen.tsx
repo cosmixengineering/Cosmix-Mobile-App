@@ -11,7 +11,7 @@ import type {
   PendingPunch,
   PunchReceipt,
 } from '../types/contracts';
-import { describeError } from '../utils/errors';
+import { describeError, errorCode } from '../utils/errors';
 import { localTime, receiptMessage } from '../utils/presentation';
 import { isAcceptedReceipt } from '../utils/validation';
 import { useLocationConsentCheck } from './consent/LocationConsentGate';
@@ -25,12 +25,21 @@ const steps: Record<AttendanceStep, string> = {
   submitting: 'Confirming with the company server…',
 };
 
+function attendanceError(failure: unknown) {
+  return {
+    message: describeError(failure),
+    isFaceRejection: errorCode(failure) === 'face_verification_failed',
+  };
+}
+
 export function AttendanceScreen(): React.JSX.Element {
   const { attendance } = useServices();
   const auth = useSession();
   const data = useAttendanceData();
   const [step, setStep] = useState<AttendanceStep | null>(null);
-  const [error, setError] = useState('');
+  const [error, setError] = useState<ReturnType<typeof attendanceError> | null>(
+    null,
+  );
   const [receipt, setReceipt] = useState<PunchReceipt | null>(null);
   const [pending, setPending] = useState<PendingPunch | null>(null);
   const [pendingReady, setPendingReady] = useState(false);
@@ -77,7 +86,7 @@ export function AttendanceScreen(): React.JSX.Element {
         })
         .catch(failure => {
           if (active) {
-            setError(describeError(failure));
+            setError(attendanceError(failure));
           }
         });
       return () => {
@@ -92,7 +101,7 @@ export function AttendanceScreen(): React.JSX.Element {
     }
     flight.current = true;
     setStep('preparing');
-    setError('');
+    setError(null);
     setReceipt(null);
     const progress = (value: AttendanceStep) => {
       if (mounted.current) {
@@ -112,7 +121,7 @@ export function AttendanceScreen(): React.JSX.Element {
       }
     } catch (failure) {
       if (mounted.current) {
-        setError(describeError(failure));
+        setError(attendanceError(failure));
       }
     } finally {
       if (mounted.current) {
@@ -121,7 +130,7 @@ export function AttendanceScreen(): React.JSX.Element {
           setPendingReady(true);
         } catch (failure) {
           setPendingReady(false);
-          setError(describeError(failure));
+          setError(attendanceError(failure));
         }
         if (mounted.current) {
           setStep(null);
@@ -132,6 +141,8 @@ export function AttendanceScreen(): React.JSX.Element {
     }
   };
 
+  const pageError =
+    error && !error.isFaceRejection ? error.message : data.error;
   return (
     <Screen>
       <View>
@@ -151,7 +162,7 @@ export function AttendanceScreen(): React.JSX.Element {
           Receipt: {receipt.id}
         </Text>
       ) : null}
-      {error || data.error ? <Notice message={error || data.error} /> : null}
+      {pageError ? <Notice message={pageError} /> : null}
       {pending ? (
         <View style={layout.card}>
           <Text style={layout.heading}>Submission needs confirmation</Text>
@@ -210,16 +221,16 @@ export function AttendanceScreen(): React.JSX.Element {
       <View style={layout.card}>
         <Text style={layout.heading}>Check In</Text>
         <Text style={layout.body}>
-          Use good lighting, remove anything covering your face, and keep one
-          face in view. We first check your current location against your
-          assigned work boundary. When it is allowed, we open the camera and
-          verify your face and liveness, then confirm fresh location before
-          recording attendance.
+          Face the light and hold the camera steady at eye level. Keep your
+          whole face in the frame, with no one else in view. We check your
+          location before opening the camera, then verify your face and confirm
+          your location before recording attendance.
         </Text>
         <Text style={layout.muted}>
           Camera and precise location access are required. Your face must
           already be enrolled by HR.
         </Text>
+        {error?.isFaceRejection ? <Notice message={error.message} /> : null}
         <Button
           title="Verify face & check in"
           onPress={() => submit('check-in')}

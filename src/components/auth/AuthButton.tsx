@@ -42,8 +42,8 @@ function ButtonGradient(): React.JSX.Element {
               x2="100%"
               y2="100%"
             >
-              <Stop offset="0%" stopColor="#5746A3" />
-              <Stop offset="100%" stopColor="#30266E" />
+              <Stop offset="0%" stopColor="#235995" />
+              <Stop offset="100%" stopColor="#133967" />
             </LinearGradient>
           </Defs>
           <Rect width={320} height={56} fill="url(#authPrimaryButton)" />
@@ -138,21 +138,21 @@ export function AuthButton({
 const styles = StyleSheet.create({
   button: {
     overflow: 'hidden',
-    minHeight: 54,
-    borderRadius: 17,
+    minHeight: 46,
+    borderRadius: 11,
     backgroundColor: authColors.primary,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 9,
     paddingHorizontal: 16,
-    paddingVertical: 15,
+    paddingVertical: 10,
   },
-  shadow: { borderRadius: 17, boxShadow: '0 6px 15px rgba(57, 50, 124, 0.18)' },
+  shadow: { borderRadius: 11, boxShadow: '0 6px 15px rgba(57, 50, 124, 0.18)' },
   gradient: { position: 'absolute', top: 0, bottom: 0, left: 0, right: 0 },
   title: {
     color: '#FFFFFF',
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '600',
     textAlign: 'center',
     flexShrink: 1,

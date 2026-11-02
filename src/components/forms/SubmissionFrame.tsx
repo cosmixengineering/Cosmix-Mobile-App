@@ -16,6 +16,7 @@ export function SubmissionFrame({
   service,
   title,
   description,
+  intro,
   route,
   revision,
   ready = true,
@@ -26,6 +27,7 @@ export function SubmissionFrame({
   service: ServiceKey;
   title: string;
   description: string;
+  intro?: React.ReactNode;
   route: string;
   revision: string;
   ready?: boolean;
@@ -120,8 +122,12 @@ export function SubmissionFrame({
   };
   return (
     <Screen>
-      <Text style={layout.title}>{title}</Text>
-      <Text style={layout.body}>{description}</Text>
+      {intro ?? (
+        <>
+          <Text style={layout.title}>{title}</Text>
+          <Text style={layout.body}>{description}</Text>
+        </>
+      )}
       <RequestFeedback
         error={mutation.error || error}
         receipt={mutation.receipt}

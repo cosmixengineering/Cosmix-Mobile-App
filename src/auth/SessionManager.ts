@@ -380,7 +380,7 @@ export class SessionManager implements BackendApi {
         grant =>
           isRecord(grant) &&
           typeof grant.permission === 'string' &&
-          /^[a-z][a-z0-9_.]{0,149}$/.test(grant.permission) &&
+          /^[a-z][a-z0-9_.-]{0,149}$/.test(grant.permission) &&
           isGuid(grant.roleAssignmentId) &&
           Number.isInteger(grant.scopeKind) &&
           typeof grant.sensitive === 'boolean',

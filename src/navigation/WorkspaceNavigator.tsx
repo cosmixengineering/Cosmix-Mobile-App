@@ -3,7 +3,7 @@ import {
   createBottomTabNavigator,
   type BottomTabBarProps,
 } from '@react-navigation/bottom-tabs';
-import { DashboardScreen } from '../screens/DashboardScreen';
+import { HomeNavigator } from './HomeNavigator';
 import { ServicesScreen } from '../screens/ServicesScreen';
 import { AttendanceScreen } from '../screens/AttendanceScreen';
 import { HistoryScreen } from '../screens/HistoryScreen';
@@ -26,7 +26,9 @@ export function WorkspaceNavigator(): React.JSX.Element {
         backBehavior="history"
         tabBar={renderTabBar}
         screenOptions={{
-          headerStyle: { backgroundColor: colors.background },
+          headerStyle: { backgroundColor: colors.white },
+          headerTitleAlign: 'center',
+          headerTitleStyle: { fontSize: 17, fontWeight: '700' },
           headerTintColor: colors.navy,
           headerShadowVisible: false,
           sceneStyle: { backgroundColor: colors.background },
@@ -34,8 +36,12 @@ export function WorkspaceNavigator(): React.JSX.Element {
       >
         <Tabs.Screen
           name="Dashboard"
-          component={DashboardScreen}
-          options={{ title: 'Home', tabBarAccessibilityLabel: 'Home' }}
+          component={HomeNavigator}
+          options={{
+            title: 'Home',
+            headerShown: false,
+            tabBarAccessibilityLabel: 'Home',
+          }}
         />
         <Tabs.Screen
           name="Services"

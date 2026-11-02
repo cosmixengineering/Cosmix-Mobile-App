@@ -15,7 +15,10 @@ import { NeedHelpLink, NeedHelpSheet } from '../components/auth/NeedHelpSheet';
 import type { RootStackParams } from '../navigation/types';
 import { authColors, authStyles } from '../theme/authTheme';
 import { describeError, messageForCode } from '../utils/errors';
-import { normalizePakistanPhoneNumber } from '../utils/validation';
+import {
+  editPakistanMobileNumber,
+  normalizePakistanPhoneNumber,
+} from '../utils/validation';
 
 export function LoginScreen({
   navigation,
@@ -23,6 +26,7 @@ export function LoginScreen({
   const { session } = useServices();
   const auth = useSession();
   const [phone, setPhone] = useState('');
+  const [phoneError, setPhoneError] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [focused, setFocused] = useState(false);
@@ -35,23 +39,25 @@ export function LoginScreen({
       mounted.current = false;
     };
   }, []);
-  let valid = false;
-  try {
-    normalizePakistanPhoneNumber(phone);
-    valid = true;
-  } catch {
-    /* Format is checked again on submit. */
-  }
+  const valid = phone.length === 10 && !phoneError;
   const changePhone = (value: string) => {
     setError('');
-    try {
-      setPhone(normalizePakistanPhoneNumber(value).slice(3));
-    } catch {
-      setPhone(value);
+    const edit = editPakistanMobileNumber(value);
+    if ('error' in edit) {
+      setPhoneError(edit.error);
+      return;
     }
+    setPhone(edit.digits);
+    setPhoneError('');
   };
   const submit = async () => {
     if (flight.current) return;
+    if (!valid) {
+      setPhoneError(
+        phoneError || 'Enter 10 digits after +92, starting with 3.',
+      );
+      return;
+    }
     flight.current = true;
     setBusy(true);
     setError('');
@@ -88,7 +94,7 @@ export function LoginScreen({
       <AuthBrandLogo />
       <View style={styles.form}>
         <AuthFieldFrame label="Phone number" focused={focused} disabled={busy}>
-          <View style={styles.phone}>
+          <View style={[styles.phone, !!phoneError && styles.invalidPhone]}>
             <View
               accessibilityLabel="Pakistan calling code +92"
               style={styles.prefix}
@@ -107,23 +113,38 @@ export function LoginScreen({
               textContentType="telephoneNumber"
               autoComplete="tel"
               autoCorrect={false}
-              maxLength={32}
               editable={!busy}
               returnKeyType="done"
               onSubmitEditing={() => submit()}
               onFocus={() => setFocused(true)}
-              onBlur={() => setFocused(false)}
+              onBlur={() => {
+                setFocused(false);
+                if (!phoneError && phone.length !== 10)
+                  setPhoneError('Enter 10 digits after +92, starting with 3.');
+              }}
               style={styles.input}
             />
             <AuthFormatIndicator visible={valid} />
           </View>
         </AuthFieldFrame>
-        <Text style={authStyles.caption}>
-          Use the mobile number registered with HR.
-        </Text>
+        {phoneError ? (
+          <Text
+            accessibilityRole="alert"
+            accessibilityLiveRegion="polite"
+            style={styles.fieldError}
+          >
+            {phoneError}
+          </Text>
+        ) : (
+          <Text style={authStyles.caption}>
+            {phone.length > 0 && phone.length < 10
+              ? `${phone.length}/10 digits entered`
+              : 'Use the mobile number registered with HR.'}
+          </Text>
+        )}
         {error ? (
           <Notice message={error} />
-        ) : auth.message ? (
+        ) : auth.message && !phone && !phoneError ? (
           <Notice message={messageForCode(auth.message)} tone="info" />
         ) : null}
         <AuthButton
@@ -192,17 +213,19 @@ const styles = StyleSheet.create({
     borderRightColor: authColors.line,
     paddingRight: 11,
   },
+  invalidPhone: { borderColor: '#A52737' },
+  fieldError: { color: '#A52737', fontSize: 13 },
   code: { color: authColors.ink, fontSize: 15, fontWeight: '600' },
   input: {
     flex: 1,
     minWidth: 0,
     color: authColors.ink,
-    fontSize: 17,
-    minHeight: 56,
-    paddingVertical: 12,
+    fontSize: 15,
+    minHeight: 46,
+    paddingVertical: 9,
     paddingHorizontal: 0,
   },
-  footer: { marginTop: 'auto', gap: 12, paddingTop: 18 },
+  footer: { marginTop: 'auto', gap: 12, paddingTop: 12 },
   divider: { height: 1, backgroundColor: authColors.line },
   protected: {
     flexDirection: 'row',

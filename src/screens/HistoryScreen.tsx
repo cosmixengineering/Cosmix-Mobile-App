@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSession } from '../app/AppProvider';
 import { Screen } from '../components/Controls';
@@ -20,6 +20,10 @@ export function HistoryScreen({
 }: WorkspaceScreenProps<'History'>): React.JSX.Element {
   const auth = useSession();
   const selected = resolveHistoryCategory(route.params?.category, auth);
+  const [choosing, setChoosing] = useState(false);
+  const categories = historyCategories.filter(item =>
+    canOpenService(item.key, auth),
+  );
   const header = (
     <View style={layout.stack8}>
       <View style={styles.heading}>
@@ -31,17 +35,35 @@ export function HistoryScreen({
           <Text style={layout.muted}>Your records, all in one place.</Text>
         </View>
       </View>
-      <Text style={styles.label}>CHOOSE A RECORD</Text>
-      <View style={styles.categories}>
-        {historyCategories
-          .filter(item => canOpenService(item.key, auth))
-          .map(item => (
+      {!!categories.length && (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Choose record category"
+          accessibilityState={{ expanded: choosing }}
+          onPress={() => setChoosing(!choosing)}
+          style={styles.selector}
+        >
+          <Text style={layout.label}>
+            {categories.find(item => item.key === selected)?.title ??
+              'Record category'}
+          </Text>
+          <Text style={styles.categoryText}>
+            {choosing ? 'Close' : 'Change'} ›
+          </Text>
+        </Pressable>
+      )}
+      {choosing && (
+        <View style={styles.categories}>
+          {categories.map(item => (
             <Pressable
               key={item.key}
               accessibilityRole="button"
               accessibilityLabel={`${item.title} history`}
               accessibilityState={{ selected: selected === item.key }}
-              onPress={() => navigation.setParams({ category: item.key })}
+              onPress={() => {
+                navigation.setParams({ category: item.key });
+                setChoosing(false);
+              }}
               style={({ pressed }) => [
                 styles.category,
                 selected === item.key && styles.active,
@@ -58,7 +80,8 @@ export function HistoryScreen({
               </Text>
             </Pressable>
           ))}
-      </View>
+        </View>
+      )}
       {selected === 'payroll' ? <PayslipHistory /> : null}
     </View>
   );
@@ -84,33 +107,38 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    marginBottom: 14,
+    marginBottom: 7,
   },
   headingText: { flex: 1, gap: 4 },
   mark: {
-    width: 48,
-    height: 48,
-    borderRadius: 16,
+    width: 34,
+    height: 34,
+    borderRadius: 10,
     backgroundColor: colors.mint,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  label: {
-    color: colors.muted,
-    fontSize: 11,
-    fontWeight: '700',
-    letterSpacing: 1.1,
-    marginBottom: 6,
+  selector: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    minHeight: 44,
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    backgroundColor: colors.white,
+    borderColor: colors.line,
+    borderWidth: 1,
+    gap: 8,
   },
-  categories: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  categories: { flexDirection: 'row', flexWrap: 'wrap', gap: 5 },
   category: {
     minHeight: 44,
     justifyContent: 'center',
-    paddingHorizontal: 14,
-    paddingVertical: 11,
+    paddingHorizontal: 9,
+    paddingVertical: 6,
     borderWidth: 1,
     borderColor: colors.line,
-    borderRadius: 24,
+    borderRadius: 10,
     backgroundColor: colors.white,
   },
   active: { backgroundColor: colors.navy, borderColor: colors.navy },

@@ -31,7 +31,9 @@ export function RootNavigator(): React.JSX.Element {
     <NavigationContainer>
       <Stack.Navigator
         screenOptions={{
-          headerStyle: { backgroundColor: colors.background },
+          headerStyle: { backgroundColor: colors.white },
+          headerTitleAlign: 'center',
+          headerTitleStyle: { fontSize: 17, fontWeight: '700' },
           headerTintColor: colors.navy,
           headerShadowVisible: false,
           contentStyle: { backgroundColor: colors.background },

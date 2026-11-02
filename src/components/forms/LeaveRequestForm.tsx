@@ -1,8 +1,15 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { Text, View } from 'react-native';
+import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 import { useServices } from '../../app/AppProvider';
 import { Button, Field, Notice } from '../Controls';
-import { ChoiceField, DateField, InfoRow } from '../ServiceControls';
+import { ChoiceField } from '../ServiceControls';
+import {
+  LeaveBanner,
+  LeaveDateField,
+  LeaveTypeField,
+} from './LeaveFormPresentation';
+import { LeaveEntitlementCard } from './LeaveEntitlementCard';
 import { SubmissionFrame } from './SubmissionFrame';
 import { EvidencePicker } from '../../services/documents/EvidencePicker';
 import type { DataRecord, SelectedEvidence } from '../../types/selfService';
@@ -12,7 +19,6 @@ import {
   businessToday,
   companyInstant,
   dateRange,
-  fraction,
   reason,
   record,
   records,
@@ -36,7 +42,14 @@ export function LeaveRequestForm({
   previousRequestId?: string;
 }): React.JSX.Element {
   const { session } = useServices();
+  const navigation = useNavigation();
+  useLayoutEffect(() => {
+    navigation.setOptions({ title: 'Apply Leave', headerTitleAlign: 'center' });
+  }, [navigation]);
   const [types, setTypes] = useState<DataRecord[]>([]);
+  const [typesFailure, setTypesFailure] = useState('');
+  const [loadingTypes, setLoadingTypes] = useState(true);
+  const [typesAttempt, retryTypes] = useState(0);
   const [typeId, setTypeId] = useState('');
   const [from, setFrom] = useState(businessToday);
   const [to, setTo] = useState(businessToday);
@@ -45,6 +58,7 @@ export function LeaveRequestForm({
   const [end, setEnd] = useState('');
   const [endDate, setEndDate] = useState(businessToday);
   const [note, setNote] = useState('');
+  const [more, setMore] = useState(false);
   const [contact, setContact] = useState('');
   const [handover, setHandover] = useState('');
   const [files, setFiles] = useState<SelectedEvidence[]>([]);
@@ -53,28 +67,43 @@ export function LeaveRequestForm({
   const [picker] = useState(() => new EvidencePicker());
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [policies, setPolicies] = useState<DataRecord[]>([]);
-  const [policyId, setPolicyId] = useState('');
-  const [balance, setBalance] = useState<DataRecord | null>(null);
   const [previousReady, setPreviousReady] = useState(!previousRequestId);
   const mounted = useRef(true);
-  const context = useRef('');
-  context.current = JSON.stringify([typeId, from, to, policyId]);
   useEffect(() => {
     let active = true;
-    mounted.current = true;
+    setTypesFailure('');
+    setLoadingTypes(true);
     session
       .request('/api/v1/leaves/mine/types')
       .then(value => {
         if (active) {
-          setTypes(records(value).filter(item => item.isActive === true));
+          const activeTypes = records(value).filter(
+            item => item.isActive === true && isGuid(item.id),
+          );
+          setTypes(activeTypes);
+          if (!previousRequestId && activeTypes.length === 1)
+            setTypeId(text(activeTypes[0].id, ''));
         }
       })
       .catch(failure => {
         if (active) {
-          setError(describeError(failure));
+          setTypesFailure(
+            failure instanceof AppError && failure.status === 404
+              ? 'Leave types are unavailable on the connected server. Contact HR if this continues.'
+              : describeError(failure),
+          );
         }
+      })
+      .finally(() => {
+        if (active) setLoadingTypes(false);
       });
+    return () => {
+      active = false;
+    };
+  }, [session, previousRequestId, typesAttempt]);
+  useEffect(() => {
+    let active = true;
+    mounted.current = true;
     if (previousRequestId) {
       session
         .request(`/api/v1/leaves/mine/${previousRequestId}`)
@@ -103,11 +132,6 @@ export function LeaveRequestForm({
       picker.remove(filesRef.current).catch(() => undefined);
     };
   }, [session, picker, previousRequestId]);
-  useEffect(() => {
-    setPolicies([]);
-    setPolicyId('');
-    setBalance(null);
-  }, [typeId, from, to]);
   const selectEvidence = async () => {
     setLoading(true);
     setError('');
@@ -130,65 +154,14 @@ export function LeaveRequestForm({
       }
     }
   };
-  const checkOptions = async () => {
-    const started = context.current;
-    setLoading(true);
-    setError('');
-    setBalance(null);
-    try {
-      if (!isGuid(typeId)) {
-        throw new AppError('invalid_leave_type');
-      }
-      dateRange(from, to);
-      const data = record(
-        await session.request(
-          `/api/v1/leaves/mine/policies?leaveTypeId=${typeId}&from=${from}&to=${to}`,
-        ),
-      );
-      if (mounted.current && started === context.current) {
-        setPolicies(records(data.policies));
-        if (data.status !== 'available') {
-          throw new AppError('leave_policy_unavailable');
-        }
-      }
-    } catch (failure) {
-      if (mounted.current && started === context.current) {
-        setError(describeError(failure));
-      }
-    } finally {
-      if (mounted.current) {
-        setLoading(false);
-      }
-    }
-  };
-  const checkBalance = async () => {
-    const started = context.current;
-    setLoading(true);
-    setError('');
-    setBalance(null);
-    try {
-      if (!isGuid(policyId) || !isGuid(typeId)) {
-        throw new AppError('leave_policy_unavailable');
-      }
-      const value = record(
-        await session.request(
-          `/api/v1/leaves/mine/balance?leaveTypeId=${typeId}&policyVersionId=${policyId}&asOf=${from}`,
-        ),
-      );
-      if (mounted.current && started === context.current) {
-        setBalance(value);
-      }
-    } catch (failure) {
-      if (mounted.current && started === context.current) {
-        setError(describeError(failure));
-      }
-    } finally {
-      if (mounted.current) {
-        setLoading(false);
-      }
-    }
-  };
   const type = types.find(item => item.id === typeId);
+  const lastDate = mode === 'full' ? to : from;
+  let calendarDays: number | null = null;
+  try {
+    calendarDays = dateRange(from, lastDate).length;
+  } catch {
+    /* The existing review step validates the date range before submission. */
+  }
   const requiredEvidence =
     type?.kind === 1
       ? [1]
@@ -214,11 +187,12 @@ export function LeaveRequestForm({
   return (
     <SubmissionFrame
       service="leaves"
-      title={previousRequestId ? 'Resubmit returned leave' : 'Apply for leave'}
+      title={previousRequestId ? 'Resubmit returned leave' : 'Apply Leave'}
+      intro={previousRequestId ? undefined : <LeaveBanner />}
       route="/api/v1/leaves/mine"
       revision={revision}
       ready={previousReady && !!type && !loading}
-      description="Choose your dates and leave type. Exact scheduled intervals are checked with your company; HR determines approval and leave treatment."
+      description="Review your scheduled time before sending your request to HR."
       onSubmitted={async () => {
         await picker.remove(filesRef.current);
         setFiles([]);
@@ -298,6 +272,9 @@ export function LeaveRequestForm({
           body,
           summary: [
             text(type.name),
+            `${days.length} scheduled ${
+              days.length === 1 ? 'day' : 'days'
+            } requested`,
             ...days.map(
               day =>
                 `${day.date}: ${localTime(
@@ -316,13 +293,37 @@ export function LeaveRequestForm({
     >
       {disabled => (
         <>
+          <LeaveEntitlementCard
+            key={JSON.stringify([typeId, from, lastDate])}
+            validRange={calendarDays !== null}
+            typeId={typeId}
+            from={from}
+            to={lastDate}
+            disabled={disabled}
+          />
+          {typesFailure ? (
+            <>
+              <Notice message={typesFailure} />
+              <Button
+                secondary
+                title="Retry leave types"
+                disabled={disabled}
+                onPress={() => retryTypes(n => n + 1)}
+              />
+            </>
+          ) : null}
+          {!loadingTypes && !typesFailure && types.length === 0 ? (
+            <Notice
+              tone="info"
+              message="No active leave types are available. Ask HR which leave policy applies to you."
+            />
+          ) : null}
           {error ? <Notice message={error} /> : null}
-          <View style={layout.card}>
-            <ChoiceField
-              label="Leave type"
+          <View style={styles.form}>
+            <LeaveTypeField
               value={typeId}
               onChange={setTypeId}
-              disabled={disabled || loading}
+              disabled={disabled || loading || loadingTypes || !types.length}
               choices={types.map(item => ({
                 value: text(item.id, ''),
                 label: text(item.name),
@@ -355,26 +356,30 @@ export function LeaveRequestForm({
                 { value: 'hourly', label: 'Part of one shift' },
               ]}
             />
-            <DateField
-              label="First date"
-              value={from}
-              disabled={disabled}
-              onChange={value => {
-                setFrom(value);
-                if (to < value) {
-                  setTo(value);
-                }
-                setEndDate(value);
-              }}
-            />
-            {mode === 'full' ? (
-              <DateField
-                label="Last date"
-                value={to}
-                onChange={setTo}
+            <View style={styles.dates}>
+              <LeaveDateField
+                label="From Date"
+                value={from}
                 disabled={disabled}
+                onChange={value => {
+                  setFrom(value);
+                  if (to < value) {
+                    setTo(value);
+                  }
+                  setEndDate(value);
+                }}
               />
-            ) : (
+              {mode === 'full' ? (
+                <LeaveDateField
+                  label="To Date"
+                  value={to}
+                  min={from}
+                  onChange={setTo}
+                  disabled={disabled}
+                />
+              ) : null}
+            </View>
+            {mode !== 'full' && (
               <>
                 <Field
                   label="Start time · company time (HH:mm)"
@@ -383,9 +388,10 @@ export function LeaveRequestForm({
                   maxLength={5}
                   editable={!disabled}
                 />
-                <DateField
+                <LeaveDateField
                   label="End date"
                   value={endDate}
+                  min={from}
                   onChange={setEndDate}
                   disabled={disabled}
                 />
@@ -398,29 +404,61 @@ export function LeaveRequestForm({
                 />
               </>
             )}
+            <Text style={layout.label}>Total Days</Text>
+            <Text style={styles.total} accessibilityLiveRegion="polite">
+              {calendarDays === null
+                ? 'Choose a valid range of up to 366 days.'
+                : mode === 'full'
+                ? `${calendarDays} calendar ${
+                    calendarDays === 1 ? 'day' : 'days'
+                  }`
+                : 'Part of one scheduled shift'}
+            </Text>
+            {mode === 'full' && (
+              <Text style={styles.hint}>
+                Rest days are excluded during schedule review.
+              </Text>
+            )}
             <Field
               label="Reason"
               value={note}
               onChangeText={setNote}
               multiline
+              placeholder="Enter your reason for leave…"
               maxLength={1000}
               editable={!disabled}
             />
-            <Field
-              label="Contact during leave · optional"
-              value={contact}
-              onChangeText={setContact}
-              maxLength={200}
-              editable={!disabled}
-            />
-            <Field
-              label="Handover notes · optional"
-              value={handover}
-              onChangeText={setHandover}
-              multiline
-              maxLength={2000}
-              editable={!disabled}
-            />
+            <Text style={styles.counter}>{note.length}/1000</Text>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityState={{ expanded: more, disabled }}
+              disabled={disabled}
+              onPress={() => setMore(!more)}
+              style={styles.more}
+            >
+              <Text style={styles.link}>
+                {more ? 'Hide' : 'Add'} contact and handover details
+              </Text>
+            </Pressable>
+            {more && (
+              <>
+                <Field
+                  label="Contact during leave · optional"
+                  value={contact}
+                  onChangeText={setContact}
+                  maxLength={200}
+                  editable={!disabled}
+                />
+                <Field
+                  label="Handover notes · optional"
+                  value={handover}
+                  onChangeText={setHandover}
+                  multiline
+                  maxLength={2000}
+                  editable={!disabled}
+                />
+              </>
+            )}
           </View>
           <View style={layout.card}>
             <Text style={layout.heading}>Evidence</Text>
@@ -468,67 +506,32 @@ export function LeaveRequestForm({
               />
             ) : null}
           </View>
-          <View style={layout.card}>
-            <Text style={layout.heading}>Leave balance</Text>
-            <Text style={layout.muted}>
-              Balance depends on the published policy and fiscal year. Pending
-              applications are separate from approved usage.
-            </Text>
-            <Button
-              title="Find applicable leave policies"
-              secondary
-              disabled={!typeId || disabled}
-              busy={loading}
-              onPress={() => checkOptions()}
-            />
-            {policies.length ? (
-              <>
-                <ChoiceField
-                  label="Policy to view"
-                  value={policyId}
-                  onChange={value => {
-                    setPolicyId(value);
-                    setBalance(null);
-                  }}
-                  disabled={disabled}
-                  choices={policies.map(item => ({
-                    value: text(item.versionId, ''),
-                    label: `${text(item.name)} · ${text(item.effectiveFrom)}`,
-                  }))}
-                />
-                <Button
-                  title="View exact balance"
-                  secondary
-                  disabled={!policyId || disabled}
-                  busy={loading}
-                  onPress={() => checkBalance()}
-                />
-              </>
-            ) : null}
-            {balance ? (
-              <>
-                <InfoRow label="Balance status" value={text(balance.status)} />
-                <InfoRow
-                  label="Annual remaining"
-                  value={
-                    balance.annualBalance
-                      ? fraction(record(balance.annualBalance).remainingDays)
-                      : 'Unavailable'
-                  }
-                />
-                <InfoRow
-                  label="Type remaining"
-                  value={
-                    balance.typeBalance
-                      ? fraction(record(balance.typeBalance).remainingDays)
-                      : 'Not specified by this policy'
-                  }
-                />
-              </>
-            ) : null}
-          </View>
         </>
       )}
     </SubmissionFrame>
   );
 }
+
+const styles = StyleSheet.create({
+  form: {
+    backgroundColor: '#FFFFFF',
+    borderColor: '#E0E6ED',
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: 12,
+    gap: 9,
+  },
+  dates: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  total: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#16243C',
+    backgroundColor: '#FFF7E3',
+    padding: 11,
+    borderRadius: 10,
+  },
+  hint: { fontSize: 12, color: '#52647A' },
+  counter: { fontSize: 12, color: '#52647A', textAlign: 'right' },
+  more: { minHeight: 38, justifyContent: 'center' },
+  link: { color: '#164575', fontWeight: '600' },
+});

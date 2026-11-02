@@ -9,6 +9,10 @@ apply from: "release-security.gradle"
  * By default you don't need to apply any configuration, just uncomment the lines you need.
  */
 react {
+    // Package the JS and assets in the debug APK too. React Native can still
+    // load Metro during development and use this bundle when Metro is offline.
+    debuggableVariants = []
+    extraPackagerArgs = ["--max-workers", "2"]
     /* Folders */
     //   The root of your project, i.e. where "package.json" lives. Default is '../..'
     // root = file("../../")

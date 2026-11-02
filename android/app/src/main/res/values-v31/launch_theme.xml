@@ -1,0 +1,9 @@
+<resources>
+    <style name="CosmixLaunchTheme" parent="AppTheme">
+        <item name="android:windowSplashScreenBackground">@color/cosmix_launcher_navy</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/cosmix_splash_icon</item>
+        <item name="android:windowBackground">@drawable/cosmix_launch_screen</item>
+        <item name="android:statusBarColor">@color/cosmix_launcher_navy</item>
+        <item name="android:navigationBarColor">@color/cosmix_launcher_navy</item>
+    </style>
+</resources>
