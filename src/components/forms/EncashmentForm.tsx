@@ -1,3 +1,6 @@
+import { LoadingSkeleton } from '../ui/LoadingSkeleton';
+import { t } from '../../i18n/language';
+import { useLanguage } from '../../i18n/preference';
 import React, { useState } from 'react';
 import { Text, View } from 'react-native';
 import { Field, Notice } from '../Controls';
@@ -18,6 +21,7 @@ import { AppError } from '../../utils/errors';
 import { layout } from '../../theme/theme';
 
 export function EncashmentForm(): React.JSX.Element {
+  useLanguage();
   const [date, setDate] = useState(businessToday);
   const [type, setType] = useState('');
   const [policy, setPolicy] = useState('');
@@ -38,8 +42,10 @@ export function EncashmentForm(): React.JSX.Element {
   return (
     <SubmissionFrame
       service="encashment"
-      title="Leave encashment request"
-      description="Choose a date in the completed leave year and the policy that applied then. Your company checks eligibility and calculates the amount."
+      title={t('Leave encashment request')}
+      description={t(
+        'Choose a date in the completed leave year and the policy that applied then. Your company checks eligibility and calculates the amount.',
+      )}
       route="/api/v1/leaves/mine/encashment"
       revision={JSON.stringify([
         date,
@@ -79,10 +85,10 @@ export function EncashmentForm(): React.JSX.Element {
             policyVersionId: policy,
           },
           summary: [
-            `${minutes} leave minutes`,
-            `Fiscal year ${start} – ${last}`,
+            t('{0} leave minutes', minutes),
+            t('Fiscal year {0} – {1}', start, last),
             clean,
-            'The server will assess the value. Submission is not a payment.',
+            t('The server will assess the value. Submission is not a payment.'),
           ],
         };
       }}
@@ -90,7 +96,7 @@ export function EncashmentForm(): React.JSX.Element {
       {disabled => (
         <View style={layout.card}>
           <DateField
-            label="Policy reference date"
+            label={t('Policy reference date')}
             value={date}
             onChange={value => {
               setDate(value);
@@ -99,7 +105,8 @@ export function EncashmentForm(): React.JSX.Element {
             disabled={disabled}
           />
           <ChoiceField
-            label="Leave type"
+            loading={types.loading}
+            label={t('Leave type')}
             value={type}
             onChange={value => {
               setType(value);
@@ -118,7 +125,8 @@ export function EncashmentForm(): React.JSX.Element {
             }
           />
           <ChoiceField
-            label="Published policy"
+            loading={policies.loading}
+            label={t('Published policy')}
             value={policy}
             onChange={setPolicy}
             disabled={disabled}
@@ -130,30 +138,31 @@ export function EncashmentForm(): React.JSX.Element {
           {types.error || policies.error || balance.error ? (
             <Notice message={types.error || policies.error || balance.error} />
           ) : null}
+          {balance.loading && <LoadingSkeleton />}
           {balance.value ? (
             <>
               <InfoRow
-                label="Balance status"
+                label={t('Balance status')}
                 value={text(balance.value.status)}
               />
               <InfoRow
-                label="Annual remaining"
+                label={t('Annual remaining')}
                 value={
                   balance.value.annualBalance
                     ? fraction(
                         record(balance.value.annualBalance).remainingDays,
                       )
-                    : 'Unavailable'
+                    : t('Unavailable')
                 }
               />
               <InfoRow
-                label="Fiscal year starts"
+                label={t('Fiscal year starts')}
                 value={text(balance.value.fiscalYearStart)}
               />
             </>
           ) : null}
           <Field
-            label="Requested leave minutes"
+            label={t('Requested leave minutes')}
             value={minutes}
             onChangeText={setMinutes}
             editable={!disabled}
@@ -161,11 +170,12 @@ export function EncashmentForm(): React.JSX.Element {
             maxLength={5}
           />
           <Text style={layout.muted}>
-            60 to 43,200 minutes. Available leave and company policy are checked
-            again at submission.
+            {t(
+              '60 to 43,200 minutes. Available leave and company policy are checked again at submission.',
+            )}
           </Text>
           <Field
-            label="Reason"
+            label={t('Reason')}
             value={note}
             onChangeText={setNote}
             editable={!disabled}

@@ -1,3 +1,5 @@
+import { displayLocale, t } from '../../i18n/language';
+import { useLanguage } from '../../i18n/preference';
 import React, { useState } from 'react';
 import {
   Modal,
@@ -20,6 +22,7 @@ import { layout } from '../../theme/theme';
 import { businessToday } from '../../utils/serviceValues';
 
 export function LeaveBanner() {
+  useLanguage();
   return (
     <View style={styles.banner}>
       <View pointerEvents="none" style={StyleSheet.absoluteFill}>
@@ -41,9 +44,9 @@ export function LeaveBanner() {
         </Svg>
       </View>
       <View style={styles.bannerCopy}>
-        <Text style={styles.bannerTitle}>Apply for Leave</Text>
+        <Text style={styles.bannerTitle}>{t('Apply for Leave')}</Text>
         <Text style={styles.bannerText}>
-          Submit your leave request and track its status.
+          {t('Submit your leave request and track its status.')}
         </Text>
       </View>
       <Svg width={68} height={70} viewBox="0 0 68 70" accessible={false}>
@@ -85,23 +88,26 @@ export function LeaveTypeField({
   onChange(value: string): void;
   disabled: boolean;
 }) {
+  useLanguage();
   const [open, setOpen] = useState(false);
   return (
     <View style={layout.stack6}>
-      <Text style={layout.label}>Leave Type</Text>
+      <Text style={layout.label}>{t('Leave Type')}</Text>
       <Pressable
         accessibilityRole="button"
         accessibilityState={{ expanded: open, disabled }}
         disabled={disabled}
         accessibilityLabel={
-          'Leave type, ' +
-          (choices.find(c => c.value === value)?.label ?? 'Choose leave type')
+          t('Leave type, ') +
+          (choices.find(c => c.value === value)?.label ??
+            t('Choose leave type'))
         }
         style={styles.input}
         onPress={() => setOpen(!open)}
       >
         <Text style={styles.value}>
-          {choices.find(c => c.value === value)?.label ?? 'Choose leave type'}
+          {choices.find(c => c.value === value)?.label ??
+            t('Choose leave type')}
         </Text>
         <Text style={styles.arrow}>{open ? '⌃' : '⌄'}</Text>
       </Pressable>
@@ -127,7 +133,9 @@ export function LeaveTypeField({
             </Pressable>
           ))}
           {!choices.length && (
-            <Text style={layout.muted}>No active leave types available.</Text>
+            <Text style={layout.muted}>
+              {t('No active leave types available.')}
+            </Text>
           )}
         </View>
       )}
@@ -135,17 +143,6 @@ export function LeaveTypeField({
   );
 }
 
-const shortDate = new Intl.DateTimeFormat('en-GB', {
-  day: 'numeric',
-  month: 'short',
-  year: 'numeric',
-  timeZone: 'UTC',
-});
-const monthTitle = new Intl.DateTimeFormat('en-GB', {
-  month: 'long',
-  year: 'numeric',
-  timeZone: 'UTC',
-});
 export function LeaveDateField({
   label,
   value,
@@ -159,7 +156,20 @@ export function LeaveDateField({
   disabled: boolean;
   min?: string;
 }) {
+  useLanguage();
   const [month, setMonth] = useState<Date | null>(null);
+  const shortDate = new Intl.DateTimeFormat(displayLocale(), {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+    timeZone: 'UTC',
+  });
+  const monthTitle = new Intl.DateTimeFormat(displayLocale(), {
+    month: 'long',
+    year: 'numeric',
+    timeZone: 'UTC',
+  });
+
   const selected = new Date(value + 'T12:00:00Z');
   const valid = Number.isFinite(selected.getTime());
   const first =
@@ -195,7 +205,7 @@ export function LeaveDateField({
           <Path d="M2 8h16M6 2v4m8-4v4" stroke="#152F50" strokeWidth="1.6" />
         </Svg>
         <Text style={styles.dateValue}>
-          {valid ? shortDate.format(selected) : 'Choose date'}
+          {valid ? shortDate.format(selected) : t('Choose date')}
         </Text>
       </Pressable>
       <Modal
@@ -214,7 +224,7 @@ export function LeaveDateField({
               <View style={layout.row}>
                 <Pressable
                   accessibilityRole="button"
-                  accessibilityLabel="Previous month"
+                  accessibilityLabel={t('Previous month')}
                   disabled={year <= 1900 && index === 0}
                   style={styles.monthButton}
                   onPress={() => move(-1)}
@@ -224,7 +234,7 @@ export function LeaveDateField({
                 <Text style={layout.heading}>{monthTitle.format(first)}</Text>
                 <Pressable
                   accessibilityRole="button"
-                  accessibilityLabel="Next month"
+                  accessibilityLabel={t('Next month')}
                   disabled={year >= 9999 && index === 11}
                   style={styles.monthButton}
                   onPress={() => move(1)}
@@ -233,7 +243,15 @@ export function LeaveDateField({
                 </Pressable>
               </View>
               <View style={styles.grid}>
-                {['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'].map(day => (
+                {[
+                  t('Mo'),
+                  t('Tu'),
+                  t('We'),
+                  t('Th'),
+                  t('Fr'),
+                  t('Sa'),
+                  t('Su'),
+                ].map(day => (
                   <Text key={day} style={styles.weekday}>
                     {day}
                   </Text>
@@ -280,7 +298,7 @@ export function LeaveDateField({
                 onPress={() => setMonth(null)}
                 style={styles.close}
               >
-                <Text style={styles.value}>Close calendar</Text>
+                <Text style={styles.value}>{t('Close calendar')}</Text>
               </Pressable>
             </View>
           </ScrollView>

@@ -1,3 +1,5 @@
+import { t } from '../../i18n/language';
+import { useLanguage } from '../../i18n/preference';
 import React, { useEffect, useRef } from 'react';
 import {
   Animated,
@@ -12,6 +14,7 @@ import { useAuthMotion } from './AuthFrame';
 const logo: ImageSourcePropType = require('../../assets/images/cosmix-logo-hd.png');
 
 export function AuthBrandLogo(): React.JSX.Element {
+  useLanguage();
   const motion = useAuthMotion();
   const entrance = useRef(new Animated.Value(1)).current;
   const drift = useRef(new Animated.Value(0)).current;
@@ -108,7 +111,7 @@ export function AuthBrandLogo(): React.JSX.Element {
         >
           <Image
             source={logo}
-            accessibilityLabel="Cosmix Engineering logo"
+            accessibilityLabel={t('Cosmix Engineering logo')}
             accessible
             resizeMode="contain"
             fadeDuration={0}

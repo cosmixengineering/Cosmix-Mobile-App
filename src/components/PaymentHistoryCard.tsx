@@ -1,3 +1,6 @@
+import { LoadingSkeleton } from './ui/LoadingSkeleton';
+import { t } from '../i18n/language';
+import { useLanguage } from '../i18n/preference';
 import React, { useCallback, useRef, useState } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 import { Text, View } from 'react-native';
@@ -17,6 +20,7 @@ export function PaymentHistoryCard({
 }: {
   initial: DataRecord;
 }): React.JSX.Element {
+  useLanguage();
   const { selfService } = useServices();
   const [row, setRow] = useState(initial);
   const [busy, setBusy] = useState(false);
@@ -63,103 +67,107 @@ export function PaymentHistoryCard({
       title={text(row.batchReference)}
     >
       <InfoRow
-        label="Pay period"
+        label={t('Pay period')}
         value={payslipPeriod(row.periodStart, row.periodEndExclusive)}
       />
       <InfoRow
-        label="Net salary entitlement"
+        label={t('Net salary entitlement')}
         value={amount(row.netEntitlement, row.currency)}
       />
       <InfoRow
-        label="Confirmed paid"
+        label={t('Confirmed paid')}
         value={amount(row.confirmedAmount, row.currency)}
       />
       <InfoRow
-        label="Awaiting confirmed payment"
+        label={t('Awaiting confirmed payment')}
         value={amount(row.outstandingAmount, row.currency)}
       />
       <InfoRow
-        label="Posted · awaiting confirmation"
+        label={t('Posted · awaiting confirmation')}
         value={amount(row.postedAmount, row.currency)}
       />
       <InfoRow
-        label="Pending payments"
+        label={t('Pending payments')}
         value={amount(row.pendingAmount, row.currency)}
       />
       <InfoRow
-        label="Available for payment initiation"
+        label={t('Available for payment initiation')}
         value={amount(row.remainingToInitiate, row.currency)}
       />
       <InfoRow
-        label="Failed payments"
+        label={t('Failed payments')}
         value={amount(row.failedAmount, row.currency)}
       />
       <InfoRow
-        label="Reversed payments"
+        label={t('Reversed payments')}
         value={amount(row.reversedAmount, row.currency)}
       />
       <Text style={layout.muted}>
-        Totals include every payment for this period. Failed and reversed
-        amounts are historical outcomes and do not count as confirmed paid.
+        {t(
+          'Totals include every payment for this period. Failed and reversed amounts are historical outcomes and do not count as confirmed paid.',
+        )}
       </Text>
-      <Text style={layout.heading}>Payment entries</Text>
+      <Text style={layout.heading}>{t('Payment entries')}</Text>
       {error ? <Notice tone="error" message={error} /> : null}
       {busy ? (
-        <Text accessibilityLiveRegion="polite" style={layout.muted}>
-          Loading payment entries…
+        <LoadingSkeleton kind="list" label={t('Loading payment entries…')} />
+      ) : null}
+      {!busy && !error && !payments.length ? (
+        <Text style={layout.muted}>
+          {t('No payment entries on this page.')}
         </Text>
       ) : null}
-      {!payments.length ? (
-        <Text style={layout.muted}>No payment entries on this page.</Text>
-      ) : null}
-      {payments.map(payment => (
-        <View key={text(payment.id)} style={layout.card}>
-          <Text style={layout.label}>{paymentStatus(payment.state)}</Text>
-          <InfoRow
-            label="Amount"
-            value={amount(payment.amount, row.currency)}
-          />
-          <InfoRow
-            label="Posting date"
-            value={text(payment.valueDate, 'Not recorded')}
-          />
-          <InfoRow
-            label="Created · Asia/Karachi"
-            value={fullLocalTime(
-              text(payment.createdAtUtc, ''),
-              'Asia/Karachi',
-            )}
-          />
-          {payment.confirmedAtUtc ? (
+      {!busy &&
+        payments.map(payment => (
+          <View key={text(payment.id)} style={layout.card}>
+            <Text style={layout.label}>{paymentStatus(payment.state)}</Text>
             <InfoRow
-              label="Confirmed · Asia/Karachi"
+              label={t('Amount')}
+              value={amount(payment.amount, row.currency)}
+            />
+            <InfoRow
+              label={t('Posting date')}
+              value={text(payment.valueDate, t('Not recorded'))}
+            />
+            <InfoRow
+              label={t('Created · Asia/Karachi')}
               value={fullLocalTime(
-                text(payment.confirmedAtUtc, ''),
+                text(payment.createdAtUtc, ''),
                 'Asia/Karachi',
               )}
             />
-          ) : null}
-          {payment.reversedAtUtc ? (
-            <InfoRow
-              label="Reversed · Asia/Karachi"
-              value={fullLocalTime(
-                text(payment.reversedAtUtc, ''),
-                'Asia/Karachi',
-              )}
-            />
-          ) : null}
-        </View>
-      ))}
-      <Text style={layout.muted}>Payment entries · page {page}</Text>
+            {payment.confirmedAtUtc ? (
+              <InfoRow
+                label={t('Confirmed · Asia/Karachi')}
+                value={fullLocalTime(
+                  text(payment.confirmedAtUtc, ''),
+                  'Asia/Karachi',
+                )}
+              />
+            ) : null}
+            {payment.reversedAtUtc ? (
+              <InfoRow
+                label={t('Reversed · Asia/Karachi')}
+                value={fullLocalTime(
+                  text(payment.reversedAtUtc, ''),
+                  'Asia/Karachi',
+                )}
+              />
+            ) : null}
+          </View>
+        ))}
+      <Text style={layout.muted}>
+        {t('Payment entries · page')} {page}
+      </Text>
       <View style={layout.stack8}>
         <Button
-          title="Previous entries"
+          title={t('Previous entries')}
           secondary
           disabled={page <= 1 || busy}
           onPress={() => changePage(page - 1)}
         />
         <Button
-          title="Next entries"
+          title={t('Next entries')}
           secondary
           disabled={row.hasMorePayments !== true || busy}
           onPress={() => changePage(page + 1)}
@@ -167,7 +175,7 @@ export function PaymentHistoryCard({
       </View>
       {error ? (
         <Button
-          title="Refresh payment entries"
+          title={t('Refresh payment entries')}
           secondary
           disabled={busy}
           onPress={() => changePage(page)}

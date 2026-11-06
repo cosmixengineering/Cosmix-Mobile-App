@@ -1,9 +1,23 @@
+import {
+  AttendanceHistoryHeader,
+  EmptyAttendanceHistory,
+} from './AttendanceHistoryHeader';
+import { LoadingSkeleton } from './ui/LoadingSkeleton';
+import { t } from '../i18n/language';
+import { useLanguage } from '../i18n/preference';
 import React, { useCallback, useRef, useState } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
-import { ActivityIndicator, Text, View } from 'react-native';
+import {
+  ActivityIndicator,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import { useServices, useSession } from '../app/AppProvider';
 import { Button, Field, Notice, Screen } from './Controls';
 import { DateField, InfoRow, ReasonSheet, RecordCard } from './ServiceControls';
+import { RequestOverview } from './RequestOverview';
 import { ServiceSummary } from './ServiceSummary';
 import { LeaveBalancePanel } from './LeaveBalancePanel';
 import { RequestFeedback } from './RequestFeedback';
@@ -32,22 +46,94 @@ import { colors, layout } from '../theme/theme';
 const actions: Partial<
   Record<ServiceKey, { kind: RequestKind; title: string }[]>
 > = {
-  leaves: [{ kind: 'leave', title: 'Apply for leave' }],
+  leaves: [
+    {
+      kind: 'leave',
+      get title() {
+        return t('Apply for leave');
+      },
+    },
+  ],
   loans: [
-    { kind: 'advance', title: 'Salary advance' },
-    { kind: 'loan', title: 'Loan request' },
+    {
+      kind: 'advance',
+      get title() {
+        return t('Salary advance');
+      },
+    },
+    {
+      kind: 'loan',
+      get title() {
+        return t('Loan request');
+      },
+    },
   ],
-  resignation: [{ kind: 'resignation', title: 'Request resignation' }],
-  allowances: [{ kind: 'allowance', title: 'New allowance claim' }],
+  resignation: [
+    {
+      kind: 'resignation',
+      get title() {
+        return t('Request resignation');
+      },
+    },
+  ],
+  allowances: [
+    {
+      kind: 'allowance',
+      get title() {
+        return t('New allowance claim');
+      },
+    },
+  ],
   vehicles: [
-    { kind: 'trip', title: 'Record work trip' },
-    { kind: 'fuel', title: 'Claim fuel' },
-    { kind: 'maintenance', title: 'Maintenance claim' },
-    { kind: 'incident', title: 'Report incident' },
+    {
+      kind: 'trip',
+      get title() {
+        return t('Record work trip');
+      },
+    },
+    {
+      kind: 'fuel',
+      get title() {
+        return t('Claim fuel');
+      },
+    },
+    {
+      kind: 'maintenance',
+      get title() {
+        return t('Maintenance claim');
+      },
+    },
+    {
+      kind: 'incident',
+      get title() {
+        return t('Report incident');
+      },
+    },
   ],
-  corrections: [{ kind: 'correction', title: 'Request attendance review' }],
-  overtime: [{ kind: 'overtime', title: 'Request overtime' }],
-  encashment: [{ kind: 'encashment', title: 'Request encashment' }],
+  corrections: [
+    {
+      kind: 'correction',
+      get title() {
+        return t('Request attendance review');
+      },
+    },
+  ],
+  overtime: [
+    {
+      kind: 'overtime',
+      get title() {
+        return t('Request overtime');
+      },
+    },
+  ],
+  encashment: [
+    {
+      kind: 'encashment',
+      get title() {
+        return t('Request encashment');
+      },
+    },
+  ],
 };
 const ranged = new Set<ServiceKey>([
   'leaves',
@@ -75,15 +161,18 @@ export function ServiceRecords({
   service,
   header,
   readOnly = false,
+  attendanceHistory = false,
   onRequest,
   onHistory,
 }: {
   service: ServiceKey;
   header?: React.ReactNode;
   readOnly?: boolean;
+  attendanceHistory?: boolean;
   onRequest?(kind: RequestKind, previousRequestId?: string): void;
   onHistory?(service: ServiceKey): void;
 }): React.JSX.Element {
+  useLanguage();
   const { session, selfService } = useServices();
   const today = businessToday();
   const auth = useSession();
@@ -215,8 +304,8 @@ export function ServiceRecords({
     await mutation.submit(
       service,
       service === 'leaves'
-        ? 'Leave cancellation request'
-        : 'Cancel own request',
+        ? t('Leave cancellation request')
+        : t('Cancel own request'),
       cancel.route,
       body,
     );
@@ -304,7 +393,7 @@ export function ServiceRecords({
   };
   const title = (row: DataRecord) =>
     service === 'leaves'
-      ? text(row.typeName, 'Leave request')
+      ? text(row.typeName, t('Leave request'))
       : service === 'vehicles'
       ? text(row.title)
       : service === 'notifications'
@@ -312,86 +401,203 @@ export function ServiceRecords({
       : service === 'calendar'
       ? text(row.date ?? row.businessDate)
       : service === 'payroll'
-      ? text(row.batchReference, 'Payroll summary')
+      ? text(row.batchReference, t('Payroll summary'))
       : service === 'punches'
       ? row.action === 'CheckIn'
-        ? 'Check In'
+        ? t('Check In')
         : row.action === 'CheckOut'
-        ? 'Check Out'
-        : 'Attendance receipt'
+        ? t('Check Out')
+        : t('Attendance receipt')
       : service === 'loans'
       ? row.recordKind === 'agreement'
         ? row.kind === 1
-          ? 'Advance agreement'
-          : 'Loan agreement'
+          ? t('Advance agreement')
+          : t('Loan agreement')
         : row.kind === 1
-        ? 'Salary advance'
-        : 'Loan request'
+        ? t('Salary advance')
+        : t('Loan request')
       : service === 'resignation'
-      ? `${status(row.requestedStatus)} employment request`
+      ? t('{0} employment request', status(row.requestedStatus))
       : service === 'encashment'
-      ? 'Leave encashment'
+      ? t('Leave encashment')
       : service === 'overtime'
-      ? 'Overtime request'
+      ? t('Overtime request')
       : service === 'corrections'
       ? status(row.kind)
       : allowanceTitle(row.kind);
+  if (service === 'requests') {
+    return (
+      <RequestOverview
+        root={root}
+        loading={data.loading}
+        error={data.error}
+        reload={data.reload}
+      />
+    );
+  }
   return (
-    <Screen>
-      {header}
-      <Text style={header ? layout.heading : layout.title}>
-        {serviceTitle(service)}
-      </Text>
-      <Text style={layout.muted}>
-        {service === 'profile'
-          ? 'Your current employment record, documents and assigned items.'
-          : service === 'payments'
-          ? 'Your salary payments by payroll period. Only confirmed payments count as paid. Turn the page for earlier periods.'
-          : readOnly
-          ? service === 'punches'
-            ? 'Check In and Check Out times show when the server recorded each receipt, in Asia/Karachi. Change the dates to view older records.'
-            : 'Your own company records. Select a date range or turn the page to see older records.'
-          : 'Your company records. Only actions available to your account can be submitted.'}
-      </Text>
-      {ranged.has(service) || service === 'shift' || service === 'calendar' ? (
-        <View style={layout.card}>
+    <Screen white={attendanceHistory} includeTopInset={attendanceHistory}>
+      {attendanceHistory ? (
+        <AttendanceHistoryHeader
+          range={query}
+          categories={header}
+          busy={data.loading}
+          count={root ? numeric(root.totalCount) ?? rows.length : null}
+          onRefresh={refresh}
+          onApply={range => {
+            clearDetails();
+            setQuery(current => ({ ...current, ...range, page: 1 }));
+          }}
+        />
+      ) : (
+        header
+      )}
+      {!attendanceHistory && !header && service !== 'profile' ? (
+        <View style={styles.serviceHeaderCard}>
+          <View style={styles.serviceHeaderRow}>
+            <View style={styles.serviceHeaderIcon}>
+              <Text style={styles.serviceHeaderIconText}>
+                {service === 'notifications'
+                  ? '🔔'
+                  : service === 'leaves'
+                  ? '🌴'
+                  : service === 'loans'
+                  ? '💰'
+                  : service === 'allowances'
+                  ? '🏷️'
+                  : service === 'overtime'
+                  ? '⏱️'
+                  : service === 'corrections'
+                  ? '📝'
+                  : service === 'vehicles'
+                  ? '🚗'
+                  : service === 'shift'
+                  ? '📅'
+                  : '📋'}
+              </Text>
+            </View>
+            <View style={styles.serviceHeaderTextWrap}>
+              <Text style={styles.serviceHeaderTitle}>
+                {serviceTitle(service)}
+              </Text>
+              <Text style={styles.serviceHeaderSubtext}>
+                {service === 'notifications'
+                  ? t('Updates, approvals, and company announcements.')
+                  : service === 'payments'
+                  ? t('Salary payments and compensation disbursement records.')
+                  : service === 'leaves'
+                  ? t('Leave applications, balances, and scheduled days.')
+                  : service === 'loans'
+                  ? t('Salary advances and active loan repayment agreements.')
+                  : service === 'allowances'
+                  ? t('Meal, travel, and outstation claims.')
+                  : service === 'overtime'
+                  ? t('Logged overtime duty and approval status.')
+                  : service === 'corrections'
+                  ? t('Attendance punch reviews and adjustment requests.')
+                  : service === 'vehicles'
+                  ? t('Vehicle custody, mileage trips, and fuel claims.')
+                  : service === 'punches'
+                  ? t('Check In and Check Out receipts recorded by server.')
+                  : t('Verified company records and activity history.')}
+              </Text>
+            </View>
+          </View>
+        </View>
+      ) : !attendanceHistory && header && service !== 'profile' ? (
+        <>
+          <Text style={layout.heading}>{serviceTitle(service)}</Text>
+          <Text style={layout.muted}>
+            {service === 'payments'
+              ? t(
+                  'Your salary payments by payroll period. Only confirmed payments count as paid. Turn the page for earlier periods.',
+                )
+              : readOnly
+              ? service === 'punches'
+                ? t(
+                    'Check In and Check Out times show when the server recorded each receipt, in Asia/Karachi. Change the dates to view older records.',
+                  )
+                : t(
+                    'Your own company records. Select a date range or turn the page to see older records.',
+                  )
+              : t(
+                  'Your company records. Only actions available to your account can be submitted.',
+                )}
+          </Text>
+        </>
+      ) : null}
+      {!attendanceHistory &&
+      (ranged.has(service) || service === 'shift' || service === 'calendar') ? (
+        <View style={styles.filterCard}>
+          <View style={styles.filterHeader}>
+            <Text style={styles.filterTitle}>{t('Date filter')}</Text>
+          </View>
           {ranged.has(service) ? (
-            <>
-              <DateField label="From" value={from} onChange={setFrom} />
-              <DateField label="To · inclusive" value={to} onChange={setTo} />
-            </>
+            <View style={styles.dateRangeRow}>
+              <View style={styles.dateRangeCol}>
+                <DateField label={t('From')} value={from} onChange={setFrom} />
+              </View>
+              <View style={styles.dateRangeCol}>
+                <DateField
+                  label={t('To · inclusive')}
+                  value={to}
+                  onChange={setTo}
+                />
+              </View>
+            </View>
           ) : service === 'shift' ? (
-            <DateField label="Business date" value={date} onChange={setDate} />
+            <DateField
+              label={t('Business date')}
+              value={date}
+              onChange={setDate}
+            />
           ) : (
-            <>
-              <Field
-                label="Year"
-                value={year}
-                onChangeText={setYear}
-                keyboardType="number-pad"
-                maxLength={4}
-              />
-              <Field
-                label="Month · 1 to 12"
-                value={month}
-                onChangeText={setMonth}
-                keyboardType="number-pad"
-                maxLength={2}
-              />
-            </>
+            <View style={styles.dateRangeRow}>
+              <View style={styles.dateRangeCol}>
+                <Field
+                  label={t('Year')}
+                  value={year}
+                  onChangeText={setYear}
+                  keyboardType="number-pad"
+                  maxLength={4}
+                />
+              </View>
+              <View style={styles.dateRangeCol}>
+                <Field
+                  label={t('Month · 1 to 12')}
+                  value={month}
+                  onChangeText={setMonth}
+                  keyboardType="number-pad"
+                  maxLength={2}
+                />
+              </View>
+            </View>
           )}
-          <Button
-            title="Apply filter"
-            secondary
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={t('Apply filter')}
             disabled={mutation.busy || data.loading}
             onPress={filter}
-          />
+            style={({ pressed }) => [
+              styles.applyFilterBtn,
+              pressed && styles.applyFilterPressed,
+              (mutation.busy || data.loading) && styles.applyFilterDisabled,
+            ]}
+          >
+            <Text style={styles.applyFilterText}>
+              {mutation.busy || data.loading
+                ? t('Filtering…')
+                : t('Apply filter')}
+            </Text>
+          </Pressable>
         </View>
       ) : null}
       {service === 'leaves' && !leaveScheduleAccess ? (
         <Notice
           tone="info"
-          message="Your leave history is available. Ask HR to enable your own roster access before applying through the app."
+          message={t(
+            'Your leave history is available. Ask HR to enable your own roster access before applying through the app.',
+          )}
         />
       ) : null}
       {!readOnly &&
@@ -421,15 +627,27 @@ export function ServiceRecords({
         />
       )}
       {data.error ? <Notice message={data.error} /> : null}
-      {data.loading ? <ActivityIndicator color={colors.teal} /> : null}
+      {data.loading ? (
+        <View style={layout.card}>
+          <LoadingSkeleton
+            kind={
+              service === 'profile' ||
+              service === 'finances' ||
+              service === 'shift'
+                ? 'card'
+                : 'list'
+            }
+          />
+        </View>
+      ) : null}
       {root ? <ServiceSummary service={service} root={root} /> : null}
       {service === 'leaves' ? (
         <>
           <Button
             title={
               showBalance
-                ? 'Hide detailed balance'
-                : 'View detailed leave balance'
+                ? t('Hide detailed balance')
+                : t('View detailed leave balance')
             }
             secondary
             onPress={() => setShowBalance(value => !value)}
@@ -439,7 +657,7 @@ export function ServiceRecords({
       ) : null}
       {service === 'finances' && onHistory ? (
         <Button
-          title="View full payroll history"
+          title={t('View full payroll history')}
           secondary
           onPress={() => onHistory?.('payroll')}
         />
@@ -447,23 +665,25 @@ export function ServiceRecords({
       {service === 'payroll' ? (
         <Notice
           tone="info"
-          message="These are your company's recorded payroll handoff summaries. A payable amount or prepared batch does not confirm payment. Contact Accounts for payment confirmation."
+          message={t(
+            "These are your company's recorded payroll handoff summaries. A payable amount or prepared batch does not confirm payment. Contact Accounts for payment confirmation.",
+          )}
         />
       ) : null}
       {service === 'loans' && root && Array.isArray(root.activeAgreements) ? (
         <View style={layout.card}>
-          <Text style={layout.heading}>Repayment agreements</Text>
+          <Text style={layout.heading}>{t('Repayment agreements')}</Text>
           {records(root.activeAgreements).map((row, index) => (
             <View key={index} style={layout.stack8}>
               <InfoRow
-                label="Agreement balance"
+                label={t('Agreement balance')}
                 value={amount(
                   row.outstandingBalance ?? row.remainingBalance,
                   row.currency,
                 )}
               />
               <Button
-                title="View repayment schedule & ledger"
+                title={t('View repayment schedule & ledger')}
                 secondary
                 busy={detailBusy}
                 onPress={() => agreement(row.id ?? row.agreementId)}
@@ -471,11 +691,15 @@ export function ServiceRecords({
             </View>
           ))}
           {!records(root.activeAgreements).length ? (
-            <Text style={layout.muted}>No active agreements.</Text>
+            <Text style={layout.muted}>{t('No active agreements.')}</Text>
           ) : null}
         </View>
       ) : null}
-      {expanded ? (
+      {detailBusy ? (
+        <View style={layout.card}>
+          <LoadingSkeleton />
+        </View>
+      ) : expanded ? (
         <DetailPanel
           service={service}
           detail={expanded}
@@ -483,7 +707,7 @@ export function ServiceRecords({
         />
       ) : null}
       {service === 'loans' && rows.length > 0 ? (
-        <Text style={layout.heading}>Request & agreement history</Text>
+        <Text style={layout.heading}>{t('Request & agreement history')}</Text>
       ) : null}
       {rows.map((row, index) => {
         if (service === 'payments') {
@@ -496,7 +720,7 @@ export function ServiceRecords({
             : service === 'punches'
             ? { ...row, state: outcomeLabel(text(row.outcome, '')) }
             : service === 'notifications'
-            ? { ...row, state: row.readAt ? 'Read' : 'Unread' }
+            ? { ...row, state: row.readAt ? t('Read') : t('Unread') }
             : row;
         return (
           <RecordCard
@@ -507,12 +731,12 @@ export function ServiceRecords({
             {service === 'notifications' ? (
               <>
                 <Text style={layout.body}>{text(row.body)}</Text>
-                <InfoRow label="Received" value={text(row.createdAt)} />
+                <InfoRow label={t('Received')} value={text(row.createdAt)} />
                 {row.readAt ? (
-                  <InfoRow label="Read" value={text(row.readAt)} />
+                  <InfoRow label={t('Read')} value={text(row.readAt)} />
                 ) : (
                   <Button
-                    title="Mark as read"
+                    title={t('Mark as read')}
                     secondary
                     disabled={!!reading}
                     busy={reading === row.id}
@@ -525,13 +749,13 @@ export function ServiceRecords({
                 {service === 'leaves' ? (
                   <>
                     <InfoRow
-                      label="Dates"
+                      label={t('Dates')}
                       value={`${text(row.startDate)} – ${text(row.endDate)}`}
                     />
                     <InfoRow
-                      label="Requested minutes"
+                      label={t('Requested minutes')}
                       value={String(
-                        numeric(row.requestedMinutes) ?? 'Unavailable',
+                        numeric(row.requestedMinutes) ?? t('Unavailable'),
                       )}
                     />
                   </>
@@ -539,25 +763,25 @@ export function ServiceRecords({
                 {service === 'payroll' ? (
                   <>
                     <InfoRow
-                      label="Period"
+                      label={t('Period')}
                       value={`${text(row.periodStart)} – ${text(
                         row.periodEnd,
                       )}`}
                     />
                     <InfoRow
-                      label="Recorded earnings"
+                      label={t('Recorded earnings')}
                       value={amount(row.totalEarnings, row.currency)}
                     />
                     <InfoRow
-                      label="Recorded deductions"
+                      label={t('Recorded deductions')}
                       value={amount(row.totalDeductions, row.currency)}
                     />
                     <InfoRow
-                      label="Net payable"
+                      label={t('Net payable')}
                       value={amount(row.netPayable, row.currency)}
                     />
                     <InfoRow
-                      label="Prepared · Asia/Karachi"
+                      label={t('Prepared · Asia/Karachi')}
                       value={localTime(
                         text(row.preparedAt, ''),
                         'Asia/Karachi',
@@ -568,24 +792,25 @@ export function ServiceRecords({
                 {service === 'punches' ? (
                   <>
                     <InfoRow
-                      label="Business date"
+                      label={t('Business date')}
                       value={text(row.businessDate)}
                     />
                     <InfoRow
-                      label="Recorded · Asia/Karachi"
+                      label={t('Recorded · Asia/Karachi')}
                       value={fullLocalTime(
                         text(row.receivedAtUtc, ''),
                         'Asia/Karachi',
                       )}
                     />
                     <InfoRow
-                      label="Server result"
+                      label={t('Server result')}
                       value={outcomeLabel(text(row.outcome, ''))}
                     />
                     {row.outcome !== 'Accepted' ? (
                       <Text style={layout.muted}>
-                        This receipt does not confirm ordinary accepted
-                        attendance. Contact your supervisor if review is needed.
+                        {t(
+                          'This receipt does not confirm ordinary accepted attendance. Contact your supervisor if review is needed.',
+                        )}
                       </Text>
                     ) : null}
                   </>
@@ -595,8 +820,8 @@ export function ServiceRecords({
                     <InfoRow
                       label={
                         row.recordKind === 'agreement'
-                          ? 'Approved principal'
-                          : 'Requested amount'
+                          ? t('Approved principal')
+                          : t('Requested amount')
                       }
                       value={amount(
                         row.recordKind === 'agreement'
@@ -608,23 +833,23 @@ export function ServiceRecords({
                     <InfoRow
                       label={
                         row.recordKind === 'agreement'
-                          ? 'Effective on'
-                          : 'Requested on'
+                          ? t('Effective on')
+                          : t('Requested on')
                       }
                       value={text(row.requestedOn ?? row.effectiveOn)}
                     />
                     {row.recordKind === 'agreement' ? (
                       <>
                         <InfoRow
-                          label="Recorded repayments"
+                          label={t('Recorded repayments')}
                           value={amount(row.totalRepaid, row.currency)}
                         />
                         <InfoRow
-                          label="Outstanding balance"
+                          label={t('Outstanding balance')}
                           value={amount(row.outstandingBalance, row.currency)}
                         />
                         <Button
-                          title="View agreement schedule & ledger"
+                          title={t('View agreement schedule & ledger')}
                           secondary
                           busy={detailBusy}
                           onPress={() => agreement(row.id)}
@@ -633,7 +858,7 @@ export function ServiceRecords({
                     ) : null}
                     {isGuid(row.agreementId) ? (
                       <Button
-                        title="View repayment details"
+                        title={t('View repayment details')}
                         secondary
                         busy={detailBusy}
                         onPress={() => agreement(row.agreementId)}
@@ -643,7 +868,7 @@ export function ServiceRecords({
                 ) : null}
                 {service === 'resignation' ? (
                   <InfoRow
-                    label="Requested effective time"
+                    label={t('Requested effective time')}
                     value={text(row.requestedEffectiveAt)}
                   />
                 ) : null}
@@ -651,22 +876,22 @@ export function ServiceRecords({
                   <>
                     {service === 'allowances' ? (
                       <InfoRow
-                        label="Payable date"
+                        label={t('Payable date')}
                         value={text(row.payableDate)}
                       />
                     ) : (
                       <InfoRow
-                        label="Requested minutes"
+                        label={t('Requested minutes')}
                         value={String(
-                          numeric(row.requestedMinutes) ?? 'Unavailable',
+                          numeric(row.requestedMinutes) ?? t('Unavailable'),
                         )}
                       />
                     )}
                     <InfoRow
                       label={
                         service === 'encashment'
-                          ? 'Proposed valuation'
-                          : 'Claimed amount'
+                          ? t('Proposed valuation')
+                          : t('Claimed amount')
                       }
                       value={amount(
                         row.claimedAmount ?? row.proposedAmount,
@@ -675,7 +900,7 @@ export function ServiceRecords({
                     />
                     {row.settlementState ? (
                       <InfoRow
-                        label="Settlement"
+                        label={t('Settlement')}
                         value={status(row.settlementState)}
                       />
                     ) : null}
@@ -683,16 +908,16 @@ export function ServiceRecords({
                 ) : null}
                 {service === 'vehicles' ? (
                   <>
-                    <InfoRow label="Recorded" value={text(row.atUtc)} />
+                    <InfoRow label={t('Recorded')} value={text(row.atUtc)} />
                     {row.registrationNumber ? (
                       <InfoRow
-                        label="Vehicle"
+                        label={t('Vehicle')}
                         value={text(row.registrationNumber)}
                       />
                     ) : null}
                     {row.amount !== null && row.amount !== undefined ? (
                       <InfoRow
-                        label="Claimed"
+                        label={t('Claimed')}
                         value={amount(row.amount, row.currency)}
                       />
                     ) : null}
@@ -700,34 +925,40 @@ export function ServiceRecords({
                 ) : null}
                 {service === 'overtime' ? (
                   <>
-                    <InfoRow label="Duty date" value={text(row.businessDate)} />
                     <InfoRow
-                      label="Requested minutes"
+                      label={t('Duty date')}
+                      value={text(row.businessDate)}
+                    />
+                    <InfoRow
+                      label={t('Requested minutes')}
                       value={String(
-                        numeric(row.requestedMinutes) ?? 'Unavailable',
+                        numeric(row.requestedMinutes) ?? t('Unavailable'),
                       )}
                     />
                     <InfoRow
-                      label="Approved minutes"
+                      label={t('Approved minutes')}
                       value={String(
-                        numeric(row.approvedMinutes) ?? 'Awaiting decision',
+                        numeric(row.approvedMinutes) ?? t('Awaiting decision'),
                       )}
                     />
                     <InfoRow
-                      label="Financial evaluation"
+                      label={t('Financial evaluation')}
                       value={status(row.financialState)}
                     />
                   </>
                 ) : null}
                 {service === 'corrections' ? (
                   <>
-                    <InfoRow label="Duty date" value={text(row.businessDate)} />
                     <InfoRow
-                      label="Attendance effect"
+                      label={t('Duty date')}
+                      value={text(row.businessDate)}
+                    />
+                    <InfoRow
+                      label={t('Attendance effect')}
                       value={
                         row.changesAttendance === true
-                          ? 'Approved revision applied'
-                          : 'No applied attendance change'
+                          ? t('Approved revision applied')
+                          : t('No applied attendance change')
                       }
                     />
                   </>
@@ -735,23 +966,23 @@ export function ServiceRecords({
                 {service === 'calendar' ? (
                   <>
                     <InfoRow
-                      label="Factual status"
+                      label={t('Factual status')}
                       value={status(row.factualStatus)}
                     />
                     <InfoRow
-                      label="Worked minutes"
+                      label={t('Worked minutes')}
                       value={String(
                         numeric(
                           row.facts ? record(row.facts).workedMinutes : null,
-                        ) ?? 'Unavailable',
+                        ) ?? t('Unavailable'),
                       )}
                     />
                     <InfoRow
-                      label="Company assessment"
+                      label={t('Company assessment')}
                       value={
                         row.policy
                           ? attendanceDay(record(row.policy).dayStatus)
-                          : 'Unavailable'
+                          : t('Unavailable')
                       }
                     />
                   </>
@@ -763,7 +994,7 @@ export function ServiceRecords({
                   service,
                 ) ? (
                   <Button
-                    title="View request details"
+                    title={t('View request details')}
                     secondary
                     busy={detailBusy}
                     onPress={() => detail(row)}
@@ -774,7 +1005,7 @@ export function ServiceRecords({
                 (row.state === 2 || row.state === 'Returned') &&
                 !row.supersededByRequestId ? (
                   <Button
-                    title="Revise & resubmit"
+                    title={t('Revise & resubmit')}
                     secondary
                     disabled={
                       mutation.busy ||
@@ -788,8 +1019,8 @@ export function ServiceRecords({
                   <Button
                     title={
                       service === 'leaves'
-                        ? 'Request cancellation'
-                        : 'Cancel pending request'
+                        ? t('Request cancellation')
+                        : t('Cancel pending request')
                     }
                     secondary
                     disabled={mutation.busy || !!mutation.pending}
@@ -804,15 +1035,44 @@ export function ServiceRecords({
       {data.data &&
       rows.length === 0 &&
       !['profile', 'finances', 'requests', 'shift'].includes(service) ? (
-        <View style={layout.card}>
-          <Text style={layout.muted}>No records in this view.</Text>
-        </View>
+        attendanceHistory ? (
+          <EmptyAttendanceHistory />
+        ) : (
+          <View style={styles.emptyCard}>
+            <View style={styles.emptyIconCircle}>
+              <Text style={styles.emptyIconText}>
+                {service === 'notifications' ? '🔔' : '📋'}
+              </Text>
+            </View>
+            <Text style={styles.emptyTitle}>
+              {service === 'notifications'
+                ? t('Inbox is clear')
+                : t('No records found')}
+            </Text>
+            <Text style={styles.emptySubtitle}>
+              {service === 'notifications'
+                ? t(
+                    "You're all caught up! New alerts, company notices, and approvals will appear here.",
+                  )
+                : ranged.has(service)
+                ? t(
+                    'No entries recorded for the selected date range. Try adjusting your dates or check back later.',
+                  )
+                : t(
+                    'No recorded entries are currently available for this section.',
+                  )}
+            </Text>
+          </View>
+        )
       ) : null}
-      {paged.has(service) && root ? (
-        <View style={layout.row}>
-          <Button
-            title={service === 'overtime' ? 'First page' : 'Previous'}
-            secondary
+      {paged.has(service) &&
+      root &&
+      rows.length > 0 &&
+      (query.page > 1 || more()) ? (
+        <View style={styles.paginationCard}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={t('Previous page')}
             disabled={query.page === 1 || data.loading || mutation.busy}
             onPress={() => {
               clearDetails();
@@ -822,11 +1082,29 @@ export function ServiceRecords({
                 cursor: undefined,
               }));
             }}
-          />
-          <Text style={layout.muted}>{query.page}</Text>
-          <Button
-            title="Next"
-            secondary
+            style={({ pressed }) => [
+              styles.pageBtn,
+              query.page === 1 && styles.pageBtnDisabled,
+              pressed && styles.pageBtnPressed,
+            ]}
+          >
+            <Text
+              style={[
+                styles.pageBtnText,
+                query.page === 1 && styles.pageBtnTextDisabled,
+              ]}
+            >
+              ‹ {service === 'overtime' ? t('First page') : t('Previous')}
+            </Text>
+          </Pressable>
+          <View style={styles.pageBadge}>
+            <Text style={styles.pageBadgeText}>
+              {t('Page')} {query.page}
+            </Text>
+          </View>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={t('Next page')}
             disabled={!more() || data.loading || mutation.busy}
             onPress={() => {
               clearDetails();
@@ -839,21 +1117,47 @@ export function ServiceRecords({
                     : undefined,
               }));
             }}
-          />
+            style={({ pressed }) => [
+              styles.pageBtn,
+              !more() && styles.pageBtnDisabled,
+              pressed && styles.pageBtnPressed,
+            ]}
+          >
+            <Text
+              style={[
+                styles.pageBtnText,
+                !more() && styles.pageBtnTextDisabled,
+              ]}
+            >
+              {t('Next')} ›
+            </Text>
+          </Pressable>
         </View>
       ) : null}
-      <Button
-        title="Refresh records"
-        secondary
-        busy={data.loading}
-        disabled={mutation.busy}
-        onPress={refresh}
-      />
+      {!attendanceHistory && (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={t('Refresh records')}
+          disabled={data.loading || mutation.busy}
+          onPress={refresh}
+          style={({ pressed }) => [
+            styles.refreshBtn,
+            pressed && styles.refreshBtnPressed,
+            (data.loading || mutation.busy) && styles.refreshBtnDisabled,
+          ]}
+        >
+          {data.loading ? (
+            <ActivityIndicator size="small" color={colors.primary} />
+          ) : (
+            <Text style={styles.refreshBtnText}>↻ {t('Refresh records')}</Text>
+          )}
+        </Pressable>
+      )}
       <ReasonSheet
         title={
           service === 'leaves'
-            ? 'Request leave cancellation'
-            : 'Cancel your pending request'
+            ? t('Request leave cancellation')
+            : t('Cancel your pending request')
         }
         visible={!!cancel}
         busy={mutation.busy}
@@ -873,6 +1177,7 @@ function DetailPanel({
   detail: DataRecord;
   onClose(): void;
 }): React.JSX.Element {
+  useLanguage();
   const row = detail.request
     ? record(detail.request)
     : detail.claim
@@ -880,24 +1185,24 @@ function DetailPanel({
     : detail;
   return (
     <View style={layout.card}>
-      <Text style={layout.heading}>Record details</Text>
+      <Text style={layout.heading}>{t('Record details')}</Text>
       {typeof row.reason === 'string' ? (
-        <InfoRow label="Reason" value={row.reason} />
+        <InfoRow label={t('Reason')} value={row.reason} />
       ) : null}
       {typeof detail.writtenEvidence === 'string' ? (
-        <InfoRow label="Written evidence" value={detail.writtenEvidence} />
+        <InfoRow label={t('Written evidence')} value={detail.writtenEvidence} />
       ) : null}
       {service === 'loans' ? (
         <>
           <InfoRow
-            label="Approved principal"
+            label={t('Approved principal')}
             value={amount(detail.approvedPrincipal, detail.currency)}
           />
           <InfoRow
-            label="Outstanding balance"
+            label={t('Outstanding balance')}
             value={amount(detail.outstandingBalance, detail.currency)}
           />
-          <Text style={layout.label}>Repayment schedule</Text>
+          <Text style={layout.label}>{t('Repayment schedule')}</Text>
           {Array.isArray(detail.schedule)
             ? records(detail.schedule).map((entry, index) => (
                 <InfoRow
@@ -905,17 +1210,15 @@ function DetailPanel({
                   label={`${text(entry.dueDate)} · ${
                     entry.isSettled === true ? 'Settled' : 'Unsettled'
                   }`}
-                  value={`${amount(
-                    entry.totalDue,
-                    entry.currency,
-                  )} · recorded paid ${amount(
-                    entry.paidAmount,
-                    entry.currency,
-                  )}`}
+                  value={t(
+                    '{0} · recorded paid {1}',
+                    amount(entry.totalDue, entry.currency),
+                    amount(entry.paidAmount, entry.currency),
+                  )}
                 />
               ))
             : null}
-          <Text style={layout.label}>Ledger</Text>
+          <Text style={layout.label}>{t('Ledger')}</Text>
           {Array.isArray(detail.ledger)
             ? records(detail.ledger).map((entry, index) => (
                 <InfoRow
@@ -930,15 +1233,15 @@ function DetailPanel({
       {service === 'leaves' ? (
         <>
           <InfoRow
-            label="Leave treatment"
+            label={t('Leave treatment')}
             value={
               row.treatment === 1
-                ? 'Paid'
+                ? t('Paid')
                 : row.treatment === 2
-                ? 'Unpaid'
+                ? t('Unpaid')
                 : row.treatment === 3
-                ? 'Does not reduce regular leave'
-                : 'Awaiting company decision'
+                ? t('Does not reduce regular leave')
+                : t('Awaiting company decision')
             }
           />
           {Array.isArray(row.days)
@@ -956,7 +1259,7 @@ function DetailPanel({
             ? records(row.cancellations).map((entry, index) => (
                 <InfoRow
                   key={index}
-                  label="Cancellation request"
+                  label={t('Cancellation request')}
                   value={`${status(entry.state)} · ${text(entry.reason)}`}
                 />
               ))
@@ -965,16 +1268,19 @@ function DetailPanel({
       ) : null}
       {service === 'overtime' ? (
         <InfoRow
-          label="Requested interval"
+          label={t('Requested interval')}
           value={`${text(row.startsAtUtc)} → ${text(row.endsAtUtc)}`}
         />
       ) : null}
       {service === 'corrections' ? (
         <>
-          <InfoRow label="Requested time" value={text(row.requestedTimeUtc)} />
           <InfoRow
-            label="Requested end"
-            value={text(row.requestedEndUtc, 'Not requested')}
+            label={t('Requested time')}
+            value={text(row.requestedTimeUtc)}
+          />
+          <InfoRow
+            label={t('Requested end')}
+            value={text(row.requestedEndUtc, t('Not requested'))}
           />
         </>
       ) : null}
@@ -987,7 +1293,7 @@ function DetailPanel({
             />
           ))
         : null}
-      <Button title="Close details" secondary onPress={onClose} />
+      <Button title={t('Close details')} secondary onPress={onClose} />
     </View>
   );
 }
@@ -995,20 +1301,204 @@ function DetailPanel({
 function attendanceDay(value: unknown): string {
   const names = [
     '',
-    'Unverified',
-    'Present',
-    'Absent',
-    'Half day',
-    'Hourly',
-    'Leave',
-    'Holiday',
-    'Rest day',
-    'Incomplete',
+    t('Unverified'),
+    t('Present'),
+    t('Absent'),
+    t('Half day'),
+    t('Hourly'),
+    t('Leave'),
+    t('Holiday'),
+    t('Rest day'),
+    t('Incomplete'),
   ];
   return typeof value === 'number' &&
     Number.isInteger(value) &&
     value > 0 &&
     value < names.length
     ? names[value]
-    : 'Unavailable';
+    : t('Unavailable');
 }
+
+const styles = StyleSheet.create({
+  serviceHeaderCard: {
+    backgroundColor: colors.white,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: colors.line,
+    padding: 14,
+    marginBottom: 2,
+  },
+  serviceHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  serviceHeaderIcon: {
+    width: 42,
+    height: 42,
+    borderRadius: 12,
+    backgroundColor: '#DFEBF8',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  serviceHeaderIconText: {
+    fontSize: 20,
+  },
+  serviceHeaderTextWrap: {
+    flex: 1,
+    gap: 3,
+  },
+  serviceHeaderTitle: {
+    fontSize: 17,
+    fontWeight: '700',
+    color: colors.navy,
+    letterSpacing: -0.3,
+  },
+  serviceHeaderSubtext: {
+    fontSize: 12,
+    color: colors.muted,
+    lineHeight: 16,
+  },
+  filterCard: {
+    backgroundColor: colors.white,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: colors.line,
+    padding: 12,
+    gap: 10,
+  },
+  filterHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  filterTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: colors.navy,
+  },
+  dateRangeRow: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  dateRangeCol: {
+    flex: 1,
+  },
+  applyFilterBtn: {
+    height: 38,
+    borderRadius: 8,
+    backgroundColor: colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  applyFilterPressed: {
+    opacity: 0.85,
+  },
+  applyFilterDisabled: {
+    opacity: 0.5,
+  },
+  applyFilterText: {
+    color: colors.white,
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  emptyCard: {
+    backgroundColor: colors.white,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: colors.line,
+    paddingVertical: 32,
+    paddingHorizontal: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  emptyIconCircle: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#F1F5F9',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  emptyIconText: {
+    fontSize: 20,
+  },
+  emptyTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: colors.navy,
+  },
+  emptySubtitle: {
+    fontSize: 12,
+    color: colors.muted,
+    textAlign: 'center',
+    lineHeight: 18,
+    maxWidth: 280,
+  },
+  paginationCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: colors.white,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: colors.line,
+    padding: 6,
+    gap: 8,
+  },
+  pageBtn: {
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    backgroundColor: '#F8FAFC',
+  },
+  pageBtnPressed: {
+    opacity: 0.7,
+  },
+  pageBtnDisabled: {
+    opacity: 0.4,
+  },
+  pageBtnText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: colors.navy,
+  },
+  pageBtnTextDisabled: {
+    color: colors.muted,
+  },
+  pageBadge: {
+    paddingVertical: 4,
+    paddingHorizontal: 10,
+    borderRadius: 6,
+    backgroundColor: '#F1F5F9',
+  },
+  pageBadgeText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: colors.navy,
+  },
+  refreshBtn: {
+    height: 38,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: colors.line,
+    backgroundColor: colors.white,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  refreshBtnPressed: {
+    backgroundColor: '#F8FAFC',
+    opacity: 0.8,
+  },
+  refreshBtnDisabled: {
+    opacity: 0.5,
+  },
+  refreshBtnText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: colors.primary,
+  },
+});

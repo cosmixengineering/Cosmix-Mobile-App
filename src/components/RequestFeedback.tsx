@@ -1,3 +1,5 @@
+import { t } from '../i18n/language';
+import { useLanguage } from '../i18n/preference';
 import React from 'react';
 import { Text, View } from 'react-native';
 import { Button, Notice } from './Controls';
@@ -18,46 +20,51 @@ export function RequestFeedback({
   busy: boolean;
   onRetry(): Promise<unknown>;
 }): React.JSX.Element {
+  useLanguage();
   return (
     <>
       {error ? <Notice message={error} /> : null}
       {receipt ? (
         <View style={layout.card}>
-          <Text style={layout.heading}>Server response received</Text>
+          <Text style={layout.heading}>{t('Server response received')}</Text>
           {Array.isArray(receipt.cancellations) &&
           receipt.cancellations.length > 0 ? (
             <Text style={layout.body}>
-              Original leave status: {status(receipt.state)}. Cancellation
-              request statuses:{' '}
+              {t('Original leave status:')} {status(receipt.state)}
+              {t('. Cancellation request statuses:')}{' '}
               {records(receipt.cancellations)
                 .map(row => status(row.state))
                 .join(', ')}
-              . A cancellation needs a separate company decision.
+              {t('. A cancellation needs a separate company decision.')}
             </Text>
           ) : (
             <Text style={layout.body}>
-              Request status: {status(receipt.state ?? receipt.approvalState)}.
-              Submission is separate from approval, payment or a change to your
-              employment.
+              {t('Request status:')}{' '}
+              {status(receipt.state ?? receipt.approvalState)}
+              {t(
+                '. Submission is separate from approval, payment or a change to your employment.',
+              )}
             </Text>
           )}
           <Text selectable style={layout.muted}>
-            Reference: {text(receipt.id)}
+            {t('Reference:')} {text(receipt.id)}
           </Text>
         </View>
       ) : null}
       {pending ? (
         <View style={layout.card}>
-          <Text style={layout.heading}>Confirm previous request</Text>
+          <Text style={layout.heading}>{t('Confirm previous request')}</Text>
           <Text style={layout.body}>
-            {pending.label} may already be recorded. Confirm the same submission
-            before starting another request.
+            {pending.label}{' '}
+            {t(
+              'may already be recorded. Confirm the same submission before starting another request.',
+            )}
           </Text>
           <Text selectable style={layout.muted}>
-            Reference: {pending.key}
+            {t('Reference:')} {pending.key}
           </Text>
           <Button
-            title="Confirm previous request"
+            title={t('Confirm previous request')}
             busy={busy}
             onPress={() => onRetry().catch(() => undefined)}
           />

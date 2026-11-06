@@ -1,5 +1,7 @@
-import React, { useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { t } from '../i18n/language';
+import { useLanguage } from '../i18n/preference';
+import React from 'react';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSession } from '../app/AppProvider';
 import { Screen } from '../components/Controls';
 import { AccessRecovery } from '../components/AccessRecovery';
@@ -12,86 +14,93 @@ import {
   resolveHistoryCategory,
 } from '../constants/services';
 import type { WorkspaceScreenProps } from '../navigation/types';
-import { colors, layout } from '../theme/theme';
+import { colors } from '../theme/theme';
 
 export function HistoryScreen({
   route,
   navigation,
 }: WorkspaceScreenProps<'History'>): React.JSX.Element {
+  useLanguage();
   const auth = useSession();
   const selected = resolveHistoryCategory(route.params?.category, auth);
-  const [choosing, setChoosing] = useState(false);
   const categories = historyCategories.filter(item =>
     canOpenService(item.key, auth),
   );
-  const header = (
-    <View style={layout.stack8}>
-      <View style={styles.heading}>
-        <View style={styles.mark}>
-          <NavigationIcon name="history" color={colors.teal} />
-        </View>
-        <View style={styles.headingText}>
-          <Text style={layout.title}>My history</Text>
-          <Text style={layout.muted}>Your records, all in one place.</Text>
-        </View>
-      </View>
-      {!!categories.length && (
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Choose record category"
-          accessibilityState={{ expanded: choosing }}
-          onPress={() => setChoosing(!choosing)}
-          style={styles.selector}
-        >
-          <Text style={layout.label}>
-            {categories.find(item => item.key === selected)?.title ??
-              'Record category'}
-          </Text>
-          <Text style={styles.categoryText}>
-            {choosing ? 'Close' : 'Change'} ›
-          </Text>
-        </Pressable>
-      )}
-      {choosing && (
-        <View style={styles.categories}>
-          {categories.map(item => (
-            <Pressable
-              key={item.key}
-              accessibilityRole="button"
-              accessibilityLabel={`${item.title} history`}
-              accessibilityState={{ selected: selected === item.key }}
-              onPress={() => {
-                navigation.setParams({ category: item.key });
-                setChoosing(false);
-              }}
-              style={({ pressed }) => [
-                styles.category,
-                selected === item.key && styles.active,
-                pressed && styles.pressed,
+
+  const tabs = categories.length > 0 && (
+    <ScrollView
+      horizontal
+      showsHorizontalScrollIndicator={false}
+      contentContainerStyle={styles.categoryScroll}
+      style={styles.categoryScrollView}
+    >
+      {categories.map(item => {
+        const active = selected === item.key;
+        return (
+          <Pressable
+            key={item.key}
+            accessibilityRole="tab"
+            accessibilityLabel={t('{0} history', item.title)}
+            accessibilityState={{ selected: active }}
+            onPress={() => navigation.setParams({ category: item.key })}
+            style={({ pressed }) => [
+              styles.tabPill,
+              active ? styles.tabPillActive : styles.tabPillInactive,
+              pressed && styles.tabPillPressed,
+            ]}
+          >
+            <Text
+              style={[
+                styles.tabText,
+                active ? styles.tabTextActive : styles.tabTextInactive,
               ]}
             >
-              <Text
-                style={[
-                  styles.categoryText,
-                  selected === item.key && styles.activeText,
-                ]}
-              >
-                {item.title}
-              </Text>
-            </Pressable>
-          ))}
+              {item.title}
+            </Text>
+          </Pressable>
+        );
+      })}
+    </ScrollView>
+  );
+  if (selected === 'punches')
+    return (
+      <ServiceRecords
+        key={selected}
+        service={selected}
+        readOnly
+        attendanceHistory
+        header={categories.length > 1 ? tabs : undefined}
+      />
+    );
+  const header = (
+    <View style={styles.headerCard}>
+      <View style={styles.headerTop}>
+        <View style={styles.mark}>
+          <NavigationIcon name="history" color="#123D70" />
         </View>
-      )}
+        <View style={styles.headerText}>
+          <Text style={styles.headerTitle}>{t('Record History')}</Text>
+          <Text style={styles.headerSubtitle}>
+            {t('All your verified employment and activity logs.')}
+          </Text>
+        </View>
+      </View>
+
+      {tabs}
+
       {selected === 'payroll' ? <PayslipHistory /> : null}
     </View>
   );
-  if (!selected)
+
+  if (!selected) {
     return (
       <Screen>
         {header}
-        <AccessRecovery service="Record history" />
+        <AccessRecovery service={t('Record history')} />
       </Screen>
     );
+  }
+
   return (
     <ServiceRecords
       key={selected}
@@ -103,46 +112,78 @@ export function HistoryScreen({
 }
 
 const styles = StyleSheet.create({
-  heading: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  headerCard: {
+    backgroundColor: colors.white,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: colors.line,
+    padding: 12,
     gap: 12,
-    marginBottom: 7,
   },
-  headingText: { flex: 1, gap: 4 },
-  mark: {
-    width: 34,
-    height: 34,
-    borderRadius: 10,
-    backgroundColor: colors.mint,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  selector: {
+  headerTop: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    minHeight: 44,
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    backgroundColor: colors.white,
-    borderColor: colors.line,
-    borderWidth: 1,
-    gap: 8,
+    gap: 10,
   },
-  categories: { flexDirection: 'row', flexWrap: 'wrap', gap: 5 },
-  category: {
-    minHeight: 44,
+  mark: {
+    width: 38,
+    height: 38,
+    borderRadius: 10,
+    backgroundColor: '#DFEBF8',
+    alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 9,
-    paddingVertical: 6,
-    borderWidth: 1,
-    borderColor: colors.line,
-    borderRadius: 10,
-    backgroundColor: colors.white,
   },
-  active: { backgroundColor: colors.navy, borderColor: colors.navy },
-  categoryText: { color: colors.text, fontSize: 13, fontWeight: '600' },
-  activeText: { color: colors.white },
-  pressed: { opacity: 0.7 },
+  headerText: {
+    flex: 1,
+    gap: 2,
+  },
+  headerTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: colors.navy,
+    letterSpacing: -0.2,
+  },
+  headerSubtitle: {
+    fontSize: 12,
+    color: colors.muted,
+    lineHeight: 16,
+  },
+  categoryScrollView: {
+    marginHorizontal: -4,
+  },
+  categoryScroll: {
+    flexDirection: 'row',
+    gap: 6,
+    paddingHorizontal: 4,
+    paddingVertical: 2,
+  },
+  tabPill: {
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 20,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  tabPillActive: {
+    backgroundColor: colors.navy,
+    borderColor: colors.navy,
+  },
+  tabPillInactive: {
+    backgroundColor: '#F8FAFC',
+    borderColor: colors.line,
+  },
+  tabPillPressed: {
+    opacity: 0.75,
+  },
+  tabText: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  tabTextActive: {
+    color: colors.white,
+  },
+  tabTextInactive: {
+    color: colors.text,
+  },
 });

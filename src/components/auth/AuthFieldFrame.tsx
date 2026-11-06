@@ -1,3 +1,5 @@
+import { t } from '../../i18n/language';
+import { useLanguage } from '../../i18n/preference';
 import React, { useEffect, useRef } from 'react';
 import { Animated, Easing, StyleSheet, View } from 'react-native';
 import { authColors, authStyles } from '../../theme/authTheme';
@@ -93,6 +95,7 @@ export function AuthFormatIndicator({
 }: {
   visible: boolean;
 }): React.JSX.Element {
+  useLanguage();
   const motion = useAuthMotion();
   const progress = useRef(new Animated.Value(visible ? 1 : 0)).current;
   useEffect(() => {
@@ -115,7 +118,7 @@ export function AuthFormatIndicator({
   return (
     <Animated.View
       accessible={visible}
-      accessibilityLabel={visible ? 'Number format complete' : undefined}
+      accessibilityLabel={visible ? t('Number format complete') : undefined}
       importantForAccessibility={visible ? 'auto' : 'no-hide-descendants'}
       style={[
         styles.check,

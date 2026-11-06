@@ -9,7 +9,7 @@ export function useServiceResource(service: ServiceKey, query: ServiceQuery) {
   const { selfService } = useServices();
   const [data, setData] = useState<ServiceData | null>(null);
   const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const generation = useRef(0);
   const { from, to, date, year, month, page, cursor } = query;
   const reload = useCallback(async () => {

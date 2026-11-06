@@ -1,3 +1,6 @@
+import { LoadingSkeleton } from '../ui/LoadingSkeleton';
+import { t } from '../../i18n/language';
+import { useLanguage } from '../../i18n/preference';
 import React, { useEffect, useState } from 'react';
 import { Text, View } from 'react-native';
 import { useServices } from '../../app/AppProvider';
@@ -16,6 +19,7 @@ import {
 } from '../../utils/serviceValues';
 
 export function ResignationForm(): React.JSX.Element {
+  useLanguage();
   const { session } = useServices();
   const [source, setSource] = useState<DataRecord | null>(null);
   const [error, setError] = useState('');
@@ -60,10 +64,12 @@ export function ResignationForm(): React.JSX.Element {
   return (
     <SubmissionFrame
       service="resignation"
-      title="Resignation request"
+      title={t('Resignation request')}
       route="/api/v1/me/resignation"
       ready={source?.canSubmit === true}
-      description="Propose your requested effective date and explain your decision. HR reviews the request independently; your employment remains unchanged until the normal company process completes."
+      description={t(
+        'Propose your requested effective date and explain your decision. HR reviews the request independently; your employment remains unchanged until the normal company process completes.',
+      )}
       revision={JSON.stringify([date, time, note, source?.employeeVersion])}
       build={async () => {
         if (
@@ -88,9 +94,9 @@ export function ResignationForm(): React.JSX.Element {
             reason: cleanReason,
           },
           summary: [
-            `Requested effective date: ${date} ${time} (company time)`,
+            t('Requested effective date: {0} {1} (company time)', date, time),
             cleanReason,
-            'HR approval is required.',
+            t('HR approval is required.'),
           ],
         };
       }}
@@ -98,9 +104,10 @@ export function ResignationForm(): React.JSX.Element {
       {disabled => (
         <View style={layout.card}>
           {error ? <Notice message={error} /> : null}
+          {!source && !error && <LoadingSkeleton kind="field" />}
           {source ? (
             <InfoRow
-              label="Current employment"
+              label={t('Current employment')}
               value={text(source.currentStatus)}
             />
           ) : null}
@@ -110,30 +117,35 @@ export function ResignationForm(): React.JSX.Element {
               message={
                 source.blockedReason ===
                 'protected_owner_requires_separate_handover'
-                  ? 'This account requires a separate owner handover process. Contact HR.'
-                  : 'An employment request, scheduled change or employment restriction needs HR review before another resignation can be submitted.'
+                  ? t(
+                      'This account requires a separate owner handover process. Contact HR.',
+                    )
+                  : t(
+                      'An employment request, scheduled change or employment restriction needs HR review before another resignation can be submitted.',
+                    )
               }
             />
           ) : null}
           <DateField
-            label="Requested effective date"
+            label={t('Requested effective date')}
             value={date}
             onChange={setDate}
             disabled={disabled}
           />
           <Field
-            label="Requested time · company time (HH:mm)"
+            label={t('Requested time · company time (HH:mm)')}
             value={time}
             onChangeText={setTime}
             maxLength={5}
             editable={!disabled}
           />
           <Text style={layout.muted}>
-            Company time is Asia/Karachi. Choose a future time; your company
-            applies its notice and approval requirements.
+            {t(
+              'Company time is Asia/Karachi. Choose a future time; your company applies its notice and approval requirements.',
+            )}
           </Text>
           <Field
-            label="Reason for resignation"
+            label={t('Reason for resignation')}
             value={note}
             onChangeText={setNote}
             multiline
@@ -141,7 +153,7 @@ export function ResignationForm(): React.JSX.Element {
             editable={!disabled}
           />
           <Button
-            title="Refresh availability"
+            title={t('Refresh availability')}
             secondary
             busy={loading}
             disabled={disabled}

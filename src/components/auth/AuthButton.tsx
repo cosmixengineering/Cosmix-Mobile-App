@@ -1,6 +1,6 @@
+import { LoadingSkeleton } from '../ui/LoadingSkeleton';
 import React, { useEffect, useRef, useState } from 'react';
 import {
-  ActivityIndicator,
   Animated,
   Easing,
   Pressable,
@@ -123,11 +123,7 @@ export function AuthButton({
         ]}
       >
         {!secondary ? <ButtonGradient /> : null}
-        {busy ? (
-          <ActivityIndicator
-            color={secondary ? authColors.primary : '#FFFFFF'}
-          />
-        ) : null}
+        {busy ? <LoadingSkeleton kind="badge" label={title} /> : null}
         <Text style={[styles.title, secondary && styles.secondaryTitle]}>
           {title}
         </Text>

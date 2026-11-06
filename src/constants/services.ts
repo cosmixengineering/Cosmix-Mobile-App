@@ -1,3 +1,4 @@
+import { t } from '../i18n/language';
 import type { SessionState } from '../types/contracts';
 import type { ServiceKey } from '../types/selfService';
 
@@ -11,57 +12,89 @@ type ServiceDefinition = {
 export const employeeServices: readonly ServiceDefinition[] = [
   {
     key: 'leaves',
-    title: 'Leave',
-    description: 'Apply, view balances and follow requests',
+    get title() {
+      return t('Leave');
+    },
+    get description() {
+      return t('Apply, view balances and follow requests');
+    },
     mark: 'LV',
     permissions: [['attendance.leaves.self']],
   },
   {
     key: 'loans',
-    title: 'Advances & loans',
-    description: 'Requests, repayment plans and balances',
+    get title() {
+      return t('Advances & loans');
+    },
+    get description() {
+      return t('Requests, repayment plans and balances');
+    },
     mark: 'AL',
     permissions: [['attendance.advancesloans.self']],
   },
   {
     key: 'resignation',
-    title: 'Resignation',
-    description: 'Submit and follow your employment request',
+    get title() {
+      return t('Resignation');
+    },
+    get description() {
+      return t('Submit and follow your employment request');
+    },
     mark: 'ER',
     permissions: [['ess.resignation.self']],
   },
   {
     key: 'allowances',
-    title: 'Allowances',
-    description: 'Check eligibility and claim work allowances',
+    get title() {
+      return t('Allowances');
+    },
+    get description() {
+      return t('Check eligibility and claim work allowances');
+    },
     mark: 'AC',
     permissions: [['attendance.allowances.self']],
   },
   {
     key: 'vehicles',
-    title: 'Vehicle & fuel',
-    description: 'Assigned vehicles, trips and fuel claims',
+    get title() {
+      return t('Vehicle & fuel');
+    },
+    get description() {
+      return t('Assigned vehicles, trips and fuel claims');
+    },
     mark: 'VF',
     permissions: [['attendance.vehicle.self']],
   },
   {
     key: 'corrections',
-    title: 'Attendance requests',
-    description: 'Request a correction and track its review',
+    get title() {
+      return t('Attendance requests');
+    },
+    get description() {
+      return t('Request a correction and track its review');
+    },
     mark: 'AR',
     permissions: [['attendance.corrections.self']],
   },
   {
     key: 'overtime',
-    title: 'Overtime',
-    description: 'View eligible duty and submit overtime requests',
+    get title() {
+      return t('Overtime');
+    },
+    get description() {
+      return t('View eligible duty and submit overtime requests');
+    },
     mark: 'OT',
     permissions: [['attendance.overtime.self']],
   },
   {
     key: 'calendar',
-    title: 'Attendance calendar',
-    description: 'Monthly facts and company assessments',
+    get title() {
+      return t('Attendance calendar');
+    },
+    get description() {
+      return t('Monthly facts and company assessments');
+    },
     mark: 'CA',
     permissions: [
       ['attendance.summaries.self'],
@@ -70,64 +103,100 @@ export const employeeServices: readonly ServiceDefinition[] = [
   },
   {
     key: 'punches',
-    title: 'Attendance history',
-    description: 'All Check In / Check Out receipts and their server results',
+    get title() {
+      return t('Attendance history');
+    },
+    get description() {
+      return t('All Check In / Check Out receipts and their server results');
+    },
     mark: 'AH',
     permissions: [['attendance.history.self']],
   },
   {
     key: 'shift',
-    title: 'My shift',
-    description: 'Your dated site or office schedule',
+    get title() {
+      return t('My shift');
+    },
+    get description() {
+      return t('Your dated site or office schedule');
+    },
     mark: 'SH',
     permissions: [['attendance.rosters.self']],
   },
   {
     key: 'finances',
-    title: 'My finances',
-    description: 'Compensation and recorded financial history',
+    get title() {
+      return t('My finances');
+    },
+    get description() {
+      return t('Compensation and recorded financial history');
+    },
     mark: 'FN',
     permissions: [['ess.finances.read']],
   },
   {
     key: 'payroll',
-    title: 'Payroll history',
-    description: 'Your recorded payroll periods and handoff summaries',
+    get title() {
+      return t('Payroll history');
+    },
+    get description() {
+      return t('Your recorded payroll periods and handoff summaries');
+    },
     mark: 'PR',
     permissions: [['ess.finances.read']],
   },
   {
     key: 'payments',
-    title: 'Payment history',
-    description: 'Salary entitlement, recorded payments and remaining balance',
+    get title() {
+      return t('Payment history');
+    },
+    get description() {
+      return t('Salary entitlement, recorded payments and remaining balance');
+    },
     mark: 'PM',
     permissions: [['ess.finances.read']],
   },
   {
     key: 'encashment',
-    title: 'Leave encashment',
-    description: 'Request and track leave valuation',
+    get title() {
+      return t('Leave encashment');
+    },
+    get description() {
+      return t('Request and track leave valuation');
+    },
     mark: 'LE',
     permissions: [['attendance.leaves.self']],
   },
   {
     key: 'profile',
-    title: 'My profile',
-    description: 'Employment, documents and assigned items',
+    get title() {
+      return t('My profile');
+    },
+    get description() {
+      return t('Employment, documents and assigned items');
+    },
     mark: 'ME',
     permissions: [['ess.profile.read', 'auth.self.read']],
   },
   {
     key: 'requests',
-    title: 'Request overview',
-    description: 'Pending requests across your workspace',
+    get title() {
+      return t('Request overview');
+    },
+    get description() {
+      return t('Pending requests across your workspace');
+    },
     mark: 'RQ',
     permissions: [['ess.requests.read', 'auth.self.read']],
   },
   {
     key: 'notifications',
-    title: 'Inbox',
-    description: 'Company notifications and reminders',
+    get title() {
+      return t('Inbox');
+    },
+    get description() {
+      return t('Company notifications and reminders');
+    },
     mark: 'IN',
     permissions: [],
   },
@@ -148,24 +217,85 @@ export function canOpenService(key: ServiceKey, state: SessionState): boolean {
 
 export function serviceTitle(key: ServiceKey): string {
   return (
-    employeeServices.find(item => item.key === key)?.title ?? 'Employee service'
+    employeeServices.find(item => item.key === key)?.title ??
+    t('Employee service')
   );
 }
 
 export const historyCategories: readonly { key: ServiceKey; title: string }[] =
   [
-    { key: 'punches', title: 'Check In / Out' },
-    { key: 'leaves', title: 'Leave' },
-    { key: 'loans', title: 'Advances & loans' },
-    { key: 'allowances', title: 'Allowances' },
-    { key: 'overtime', title: 'Overtime' },
-    { key: 'corrections', title: 'Attendance requests' },
-    { key: 'calendar', title: 'Monthly attendance' },
-    { key: 'payroll', title: 'Payroll' },
-    { key: 'payments', title: 'Payments' },
-    { key: 'encashment', title: 'Leave encashment' },
-    { key: 'vehicles', title: 'Vehicle & fuel' },
-    { key: 'resignation', title: 'Resignation' },
+    {
+      key: 'punches',
+      get title() {
+        return t('Check In / Out');
+      },
+    },
+    {
+      key: 'leaves',
+      get title() {
+        return t('Leave');
+      },
+    },
+    {
+      key: 'loans',
+      get title() {
+        return t('Advances & loans');
+      },
+    },
+    {
+      key: 'allowances',
+      get title() {
+        return t('Allowances');
+      },
+    },
+    {
+      key: 'overtime',
+      get title() {
+        return t('Overtime');
+      },
+    },
+    {
+      key: 'corrections',
+      get title() {
+        return t('Attendance requests');
+      },
+    },
+    {
+      key: 'calendar',
+      get title() {
+        return t('Monthly attendance');
+      },
+    },
+    {
+      key: 'payroll',
+      get title() {
+        return t('Payroll');
+      },
+    },
+    {
+      key: 'payments',
+      get title() {
+        return t('Payments');
+      },
+    },
+    {
+      key: 'encashment',
+      get title() {
+        return t('Leave encashment');
+      },
+    },
+    {
+      key: 'vehicles',
+      get title() {
+        return t('Vehicle & fuel');
+      },
+    },
+    {
+      key: 'resignation',
+      get title() {
+        return t('Resignation');
+      },
+    },
   ];
 
 export function resolveHistoryCategory(
@@ -185,17 +315,17 @@ export function resolveHistoryCategory(
 export function allowanceTitle(value: unknown): string {
   const names = [
     '',
-    'Office meal',
-    'Site dinner',
-    'Site breakfast',
-    'Site lunch',
-    'Outstation daily',
-    'Work travel',
+    t('Office meal'),
+    t('Site dinner'),
+    t('Site breakfast'),
+    t('Site lunch'),
+    t('Outstation daily'),
+    t('Work travel'),
   ];
   return typeof value === 'number' &&
     Number.isInteger(value) &&
     value > 0 &&
     value < names.length
     ? names[value]
-    : 'Allowance claim';
+    : t('Allowance claim');
 }

@@ -1,3 +1,6 @@
+import { t } from '../i18n/language';
+import { environment } from '../config/environment';
+import { useLanguage } from '../i18n/preference';
 import React, { useEffect, useRef, useState } from 'react';
 import {
   AppState,
@@ -24,6 +27,7 @@ export function VerifyCodeScreen({
   route,
   navigation,
 }: NativeStackScreenProps<RootStackParams, 'VerifyCode'>): React.JSX.Element {
+  useLanguage();
   const { session } = useServices();
   const [challenge, setChallenge] = useState(route.params.challenge);
   const [code, setCode] = useState('');
@@ -115,7 +119,7 @@ export function VerifyCodeScreen({
       <View style={styles.header}>
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel="Back to login"
+          accessibilityLabel={t('Back to login')}
           accessibilityState={{ disabled: busy !== null }}
           disabled={busy !== null}
           onPress={changePhone}
@@ -123,7 +127,7 @@ export function VerifyCodeScreen({
         >
           <AuthIcon name="back" size={19} />
         </Pressable>
-        <Text style={styles.headerTitle}>Verification</Text>
+        <Text style={styles.headerTitle}>{t('Verification')}</Text>
         <View style={styles.headerSpacer} />
       </View>
       <AuthSecurityArtwork />
@@ -132,11 +136,12 @@ export function VerifyCodeScreen({
           accessibilityRole="header"
           style={[authStyles.heading, authStyles.centered]}
         >
-          Verification code
+          {t('Verification code')}
         </Text>
         <Text style={[authStyles.body, authStyles.centered]}>
-          If your number is eligible, an SMS with a six-digit code will arrive
-          shortly.
+          {t(
+            'If your number is eligible, an SMS with a six-digit code will arrive shortly.',
+          )}
         </Text>
       </View>
       <OtpCodeField
@@ -149,9 +154,18 @@ export function VerifyCodeScreen({
         disabled={busy !== null}
         onSubmit={() => run('verify')}
       />
+      {environment.wifiUat &&
+        !expired &&
+        typeof challenge.uatCode === 'string' &&
+        /^[0-9]{6}$/.test(challenge.uatCode) && (
+          <Notice
+            tone="info"
+            message={t('Test account OTP: {0}', challenge.uatCode)}
+          />
+        )}
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel="Change phone number"
+        accessibilityLabel={t('Change phone number')}
         accessibilityState={{ disabled: busy !== null }}
         disabled={busy !== null}
         onPress={changePhone}
@@ -169,19 +183,21 @@ export function VerifyCodeScreen({
       <View style={styles.actions}>
         <AuthButton
           secondary
-          title={remaining ? `Send again · ${remaining}s` : 'Send again'}
-          accessibilityLabel="Send again"
+          title={
+            remaining ? t('Send again · {0}s', remaining) : t('Send again')
+          }
+          accessibilityLabel={t('Send again')}
           accessibilityHint={
             remaining
-              ? `Available in ${remaining} seconds`
-              : 'Request a new SMS verification code'
+              ? t('Available in {0} seconds', remaining)
+              : t('Request a new SMS verification code')
           }
           busy={busy === 'resend'}
           disabled={busy !== null || remaining > 0}
           onPress={() => run('resend')}
         />
         <AuthButton
-          title="Verify and sign in"
+          title={t('Verify and sign in')}
           busy={busy === 'verify'}
           disabled={busy !== null || code.length !== 6 || expired}
           onPress={() => run('verify')}
@@ -189,7 +205,7 @@ export function VerifyCodeScreen({
       </View>
       <View style={styles.footer}>
         <Text style={[authStyles.caption, authStyles.centered]}>
-          Keep your code private. Cosmix will never ask you to share it.
+          {t('Keep your code private. Cosmix will never ask you to share it.')}
         </Text>
         <NeedHelpLink disabled={busy !== null} onPress={() => setHelp(true)} />
       </View>
@@ -229,6 +245,7 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   number: {
+    writingDirection: 'ltr',
     color: authColors.primary,
     fontSize: 16,
     fontWeight: '600',

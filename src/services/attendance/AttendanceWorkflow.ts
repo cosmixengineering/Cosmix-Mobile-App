@@ -20,6 +20,9 @@ import {
   validateLocation,
 } from '../../utils/validation';
 
+// Installed by React Native during runtime initialization.
+declare const performance: { now(): number };
+
 type Identity = { accountId: string; sessionId: string };
 export type AttendancePorts = {
   camera: { capture(ensureCurrent: () => void): Promise<string> };
@@ -76,6 +79,7 @@ export class AttendanceWorkflow {
         },
       );
       const preflightReceivedAt = this.ports.now();
+      const preflightTick = performance.now();
       if (
         !isRecord(preflight) ||
         preflight.canOpenCamera !== true ||
@@ -199,6 +203,11 @@ export class AttendanceWorkflow {
         progress('location');
         const location = await this.ports.location.read();
         validateLocation(location, this.ports.now());
+        await this.waitForCaptureTime(
+          location,
+          preflight.checkedAtUtc,
+          preflightTick,
+        );
         ensureCurrent();
         const body: PunchBody = {
           ...this.locationBody(location),
@@ -228,12 +237,14 @@ export class AttendanceWorkflow {
       const state = await this.api.request<AttendanceState>(
         '/api/v1/me/attendance/state',
       );
+      const stateTick = performance.now();
       this.requireState(state, 'check-out');
       await this.ports.location.ensurePermission();
       this.requireIdentity(identity);
       progress('location');
       const location = await this.ports.location.read();
       validateLocation(location, this.ports.now());
+      await this.waitForCaptureTime(location, state.serverTimeUtc, stateTick);
       this.requireIdentity(identity);
       return this.prepareAndSubmit(
         'check-out',
@@ -269,6 +280,22 @@ export class AttendanceWorkflow {
       return null;
     }
     return pending;
+  }
+
+  // A server timestamp is a lower bound at response receipt. Use elapsed
+  // monotonic time so a phone clock adjustment cannot advance that bound.
+  private async waitForCaptureTime(
+    location: LocationSample,
+    serverUtc: string,
+    responseTick: number,
+  ) {
+    const lead =
+      Date.parse(location.capturedAtUtc) -
+      (Date.parse(serverUtc) + performance.now() - responseTick);
+    if (lead > 5000) throw new AppError('check_in_location_clock_ahead');
+    if (lead > 0)
+      await new Promise<void>(resolve => setTimeout(resolve, Math.ceil(lead)));
+    validateLocation(location, this.ports.now());
   }
 
   private async prepareAndSubmit(

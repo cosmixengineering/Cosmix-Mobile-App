@@ -1,3 +1,7 @@
+import { NavigationIcon } from './NavigationIcon';
+import { LoadingSkeleton } from './ui/LoadingSkeleton';
+import { displayLocale, t } from '../i18n/language';
+import { useLanguage } from '../i18n/preference';
 import React, { useEffect, useState } from 'react';
 import {
   KeyboardAvoidingView,
@@ -19,44 +23,54 @@ export function ChoiceField({
   label,
   value,
   choices,
+  loading = false,
   onChange,
   disabled = false,
 }: {
   label: string;
   value: string;
   choices: readonly Choice[];
+  loading?: boolean;
   onChange(value: string): void;
   disabled?: boolean;
 }): React.JSX.Element {
+  useLanguage();
   return (
     <View style={styles.group}>
       <Text style={layout.label}>{label}</Text>
-      <View style={styles.choices}>
-        {choices.map(choice => (
-          <Pressable
-            key={choice.value}
-            accessibilityRole="radio"
-            accessibilityState={{ selected: value === choice.value, disabled }}
-            disabled={disabled}
-            onPress={() => onChange(choice.value)}
-            style={[styles.choice, value === choice.value && styles.selected]}
-          >
-            <Text
-              style={[
-                styles.choiceText,
-                value === choice.value && styles.selectedText,
-              ]}
+      {loading ? (
+        <LoadingSkeleton kind="field" label={label} />
+      ) : (
+        <View style={styles.choices}>
+          {choices.map(choice => (
+            <Pressable
+              key={choice.value}
+              accessibilityRole="radio"
+              accessibilityState={{
+                selected: value === choice.value,
+                disabled,
+              }}
+              disabled={disabled}
+              onPress={() => onChange(choice.value)}
+              style={[styles.choice, value === choice.value && styles.selected]}
             >
-              {choice.label}
+              <Text
+                style={[
+                  styles.choiceText,
+                  value === choice.value && styles.selectedText,
+                ]}
+              >
+                {choice.label}
+              </Text>
+            </Pressable>
+          ))}
+          {choices.length === 0 ? (
+            <Text style={layout.muted}>
+              {t('No available options. Refresh or contact HR.')}
             </Text>
-          </Pressable>
-        ))}
-        {choices.length === 0 ? (
-          <Text style={layout.muted}>
-            No available options. Refresh or contact HR.
-          </Text>
-        ) : null}
-      </View>
+          ) : null}
+        </View>
+      )}
     </View>
   );
 }
@@ -66,12 +80,22 @@ export function DateField({
   value,
   onChange,
   disabled = false,
+  compactLabel,
+  dialogTitle,
 }: {
   label: string;
   value: string;
   onChange(value: string): void;
   disabled?: boolean;
+  compactLabel?: string;
+  dialogTitle?: string;
 }): React.JSX.Element {
+  const language = useLanguage();
+  const weekdays =
+    language === 'ur'
+      ? ['پیر', 'منگل', 'بدھ', 'جمعرات', 'جمعہ', 'ہفتہ', 'اتوار']
+      : ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  const [draft, setDraft] = useState('');
   const [open, setOpen] = useState(false);
   const [month, setMonth] = useState(() => {
     const parsed = new Date(value + 'T12:00:00Z');
@@ -93,78 +117,184 @@ export function DateField({
       <Pressable
         disabled={disabled}
         accessibilityRole="button"
-        accessibilityLabel={`${label}, ${value || 'choose date'}`}
+        accessibilityLabel={`${label}, ${value || t('Choose date')}`}
         style={styles.dateButton}
         onPress={() => {
           const parsed = new Date(value + 'T12:00:00Z');
-          if (Number.isFinite(parsed.getTime())) {
-            setMonth(parsed);
-          }
+          const initial = Number.isFinite(parsed.getTime())
+            ? parsed
+            : new Date();
+          setMonth(initial);
+          setDraft(initial.toISOString().slice(0, 10));
           setOpen(true);
         }}
       >
-        <Text style={layout.body}>{value || 'Choose date'}</Text>
-        <Text style={styles.calendarLabel}>Calendar</Text>
+        <Text style={layout.body}>
+          {compactLabel || value || t('Choose date')}
+        </Text>
+        {compactLabel ? (
+          <NavigationIcon name="history" size={18} color={colors.navy} />
+        ) : (
+          <Text style={styles.calendarLabel}>{t('Calendar')}</Text>
+        )}
       </Pressable>
       <Modal
         visible={open}
         transparent
+        statusBarTranslucent
         animationType="fade"
         onRequestClose={() => setOpen(false)}
       >
-        <View style={styles.scrim}>
-          <View style={styles.modal}>
-            <View style={layout.row}>
-              <Button title="‹" secondary onPress={() => move(-1)} />
-              <Text style={layout.label}>
-                {new Intl.DateTimeFormat('en-GB', {
-                  month: 'long',
-                  year: 'numeric',
-                  timeZone: 'UTC',
-                }).format(month)}
-              </Text>
-              <Button title="›" secondary onPress={() => move(1)} />
-            </View>
-            <View style={styles.calendarGrid}>
-              {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((day, key) => (
-                <Text key={`header-${key}`} style={styles.dayHeader}>
-                  {day}
+        <View
+          style={[
+            styles.dateScrim,
+            language === 'ur' ? styles.rtl : styles.ltr,
+          ]}
+        >
+          <Pressable
+            accessible={false}
+            style={StyleSheet.absoluteFill}
+            onPress={() => setOpen(false)}
+          />
+          <View style={styles.dateDialog} accessibilityViewIsModal>
+            <ScrollView
+              bounces={false}
+              contentContainerStyle={styles.dialogContent}
+            >
+              <View style={styles.dialogHeader}>
+                <View style={styles.headerCopy}>
+                  <Text accessibilityRole="header" style={styles.dialogTitle}>
+                    {dialogTitle || label}
+                  </Text>
+                  {draft ? (
+                    <Text style={styles.dateSubtitle}>
+                      {new Intl.DateTimeFormat(displayLocale(), {
+                        weekday: 'short',
+                        day: '2-digit',
+                        month: 'short',
+                        year: 'numeric',
+                        timeZone: 'UTC',
+                      }).format(new Date(draft + 'T12:00:00Z'))}
+                    </Text>
+                  ) : null}
+                </View>
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={t('Close calendar')}
+                  hitSlop={5}
+                  style={styles.roundControl}
+                  onPress={() => setOpen(false)}
+                >
+                  <Text style={styles.glyph}>×</Text>
+                </Pressable>
+              </View>
+              <View style={styles.monthRow}>
+                <Text accessibilityRole="header" style={styles.monthLabel}>
+                  {new Intl.DateTimeFormat(displayLocale(), {
+                    month: 'long',
+                    year: 'numeric',
+                    timeZone: 'UTC',
+                  }).format(month)}
                 </Text>
-              ))}
-              {Array.from({ length: offset }, (_, key) => (
-                <View key={`empty-${key}`} style={styles.day} />
-              ))}
-              {Array.from({ length: count }, (_, key) => {
-                const day = key + 1;
-                const date = `${year}-${String(index + 1).padStart(
-                  2,
-                  '0',
-                )}-${String(day).padStart(2, '0')}`;
-                return (
+                {[-1, 1].map(delta => (
                   <Pressable
-                    key={date}
+                    key={delta}
                     accessibilityRole="button"
-                    accessibilityLabel={date}
-                    onPress={() => {
-                      onChange(date);
-                      setOpen(false);
-                    }}
-                    style={[styles.day, value === date && styles.selectedDay]}
+                    accessibilityLabel={t(
+                      delta === -1 ? 'Previous month' : 'Next month',
+                    )}
+                    onPress={() => move(delta)}
+                    style={styles.roundControl}
                   >
-                    <Text
-                      style={value === date ? styles.selectedText : layout.body}
-                    >
-                      {day}
+                    <Text style={styles.glyph}>
+                      {(delta === -1) !== (language === 'ur') ? '‹' : '›'}
                     </Text>
                   </Pressable>
-                );
-              })}
-            </View>
-            <Button
-              title="Close calendar"
-              secondary
-              onPress={() => setOpen(false)}
-            />
+                ))}
+              </View>
+              <View>
+                <View style={styles.weekRow}>
+                  {weekdays.map(day => (
+                    <Text key={day} style={styles.dayHeader}>
+                      {day}
+                    </Text>
+                  ))}
+                </View>
+                {Array.from(
+                  { length: Math.ceil((offset + count) / 7) },
+                  (_, week) => (
+                    <View key={week} style={styles.weekRow}>
+                      {weekdays.map((weekday, col) => {
+                        const day = week * 7 + col - offset + 1;
+                        if (day < 1 || day > count)
+                          return <View key={weekday} style={styles.dayCell} />;
+                        const date = `${year}-${String(index + 1).padStart(
+                          2,
+                          '0',
+                        )}-${String(day).padStart(2, '0')}`;
+                        const selected = date === draft;
+                        return (
+                          <Pressable
+                            key={weekday}
+                            accessibilityRole="button"
+                            accessibilityLabel={date}
+                            accessibilityState={{ selected }}
+                            style={styles.dayCell}
+                            onPress={() => {
+                              setDraft(date);
+                              if (!dialogTitle) {
+                                onChange(date);
+                                setOpen(false);
+                              }
+                            }}
+                          >
+                            <View
+                              style={[
+                                styles.dayCircle,
+                                selected && styles.selectedDay,
+                              ]}
+                            >
+                              <Text
+                                style={[
+                                  styles.dayNumber,
+                                  col > 4 && styles.weekend,
+                                  selected && styles.selectedText,
+                                ]}
+                              >
+                                {day}
+                              </Text>
+                            </View>
+                          </Pressable>
+                        );
+                      })}
+                    </View>
+                  ),
+                )}
+              </View>
+              <View style={styles.dateFooter}>
+                <Pressable
+                  accessibilityRole="button"
+                  style={styles.cancelDate}
+                  onPress={() => setOpen(false)}
+                >
+                  <Text style={styles.cancelText}>
+                    {t(dialogTitle ? 'Cancel' : 'Close calendar')}
+                  </Text>
+                </Pressable>
+                {dialogTitle && (
+                  <Pressable
+                    accessibilityRole="button"
+                    style={styles.confirmDate}
+                    onPress={() => {
+                      onChange(draft);
+                      setOpen(false);
+                    }}
+                  >
+                    <Text style={styles.selectedText}>{t('Select date')}</Text>
+                  </Pressable>
+                )}
+              </View>
+            </ScrollView>
           </View>
         </View>
       </Modal>
@@ -189,6 +319,7 @@ export function InfoRow({
   );
 }
 export function StatusBadge({ value }: { value: unknown }): React.JSX.Element {
+  useLanguage();
   const label = status(value);
   const positive = [
     'Approved',
@@ -196,7 +327,7 @@ export function StatusBadge({ value }: { value: unknown }): React.JSX.Element {
     'Settled',
     'Paid',
     'Repaid',
-  ].includes(label);
+  ].includes(value === 1 ? 'Approved' : String(value));
   return (
     <Text style={[styles.badge, positive ? styles.positive : styles.neutral]}>
       {label}
@@ -212,6 +343,7 @@ export function RecordCard({
   title: string;
   children?: React.ReactNode;
 }): React.JSX.Element {
+  useLanguage();
   return (
     <View style={layout.card}>
       <View style={layout.row}>
@@ -221,7 +353,7 @@ export function RecordCard({
       {children}
       {typeof row.id === 'string' ? (
         <Text selectable style={styles.reference}>
-          Reference {row.id}
+          {t('Reference')} {row.id}
         </Text>
       ) : null}
     </View>
@@ -240,6 +372,7 @@ export function ReasonSheet({
   onClose(): void;
   onConfirm(reason: string): Promise<void>;
 }): React.JSX.Element {
+  useLanguage();
   const [value, setValue] = useState('');
   const [error, setError] = useState('');
   useEffect(() => {
@@ -269,11 +402,11 @@ export function ReasonSheet({
         >
           <Text style={layout.heading}>{title}</Text>
           <Text style={layout.muted}>
-            Your request and its review history will be retained.
+            {t('Your request and its review history will be retained.')}
           </Text>
           {error ? <Notice message={error} /> : null}
           <Field
-            label="Reason"
+            label={t('Reason')}
             value={value}
             onChangeText={setValue}
             multiline
@@ -281,7 +414,7 @@ export function ReasonSheet({
             editable={!busy}
           />
           <Button
-            title="Confirm request"
+            title={t('Confirm request')}
             busy={busy}
             disabled={!value.trim()}
             onPress={() => {
@@ -294,7 +427,12 @@ export function ReasonSheet({
                 .catch(failure => setError(describeError(failure)));
             }}
           />
-          <Button title="Close" secondary disabled={busy} onPress={onClose} />
+          <Button
+            title={t('Close')}
+            secondary
+            disabled={busy}
+            onPress={onClose}
+          />
         </ScrollView>
       </KeyboardAvoidingView>
     </Modal>
@@ -302,6 +440,8 @@ export function ReasonSheet({
 }
 
 const styles = StyleSheet.create({
+  rtl: { direction: 'rtl' },
+  ltr: { direction: 'ltr' },
   group: { gap: 9 },
   choices: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   choice: {
@@ -318,16 +458,18 @@ const styles = StyleSheet.create({
   choiceText: { fontSize: 14, color: colors.navy },
   selectedText: { color: colors.white, fontWeight: '600' },
   dateButton: {
-    minHeight: 44,
+    minHeight: 40,
     borderWidth: 1,
     borderColor: colors.line,
-    borderRadius: 12,
+    borderRadius: 8,
     backgroundColor: colors.white,
-    padding: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
     flexDirection: 'row',
     justifyContent: 'space-between',
+    alignItems: 'center',
   },
-  calendarLabel: { color: colors.teal, fontSize: 14, fontWeight: '600' },
+  calendarLabel: { color: colors.primary, fontSize: 13, fontWeight: '600' },
   scrim: {
     flex: 1,
     backgroundColor: '#102D4288',
@@ -340,34 +482,97 @@ const styles = StyleSheet.create({
     backgroundColor: colors.white,
     gap: 10,
   },
-  calendarGrid: { flexDirection: 'row', flexWrap: 'wrap' },
-  dayHeader: {
-    width: '14.2857%',
-    textAlign: 'center',
-    paddingVertical: 10,
-    color: colors.muted,
-  },
-  day: {
-    width: '14.2857%',
-    minHeight: 42,
+  dateScrim: {
+    flex: 1,
+    padding: 24,
     alignItems: 'center',
     justifyContent: 'center',
+    backgroundColor: 'rgba(17,41,65,0.60)',
+  },
+  dateDialog: {
+    width: '100%',
+    maxWidth: 390,
+    maxHeight: '94%',
+    borderRadius: 20,
+    backgroundColor: colors.white,
+    overflow: 'hidden',
+  },
+  dialogContent: { padding: 20, gap: 14 },
+  dialogHeader: { flexDirection: 'row', alignItems: 'flex-start', gap: 8 },
+  headerCopy: { flex: 1, gap: 3 },
+  dialogTitle: { fontSize: 20, fontWeight: '700', color: colors.navy },
+  dateSubtitle: { fontSize: 15, color: colors.muted },
+  monthRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 6,
+    gap: 8,
+  },
+  monthLabel: { flex: 1, fontSize: 17, fontWeight: '700', color: colors.navy },
+  roundControl: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#EFF2F5',
+  },
+  glyph: { fontSize: 24, lineHeight: 27, color: colors.navy },
+  weekRow: { flexDirection: 'row', alignItems: 'center' },
+  dayHeader: {
+    flex: 1,
+    textAlign: 'center',
+    fontWeight: '600',
+    fontSize: 12,
+    color: colors.muted,
+    paddingBottom: 6,
+  },
+  dayCell: {
+    flex: 1,
+    minHeight: 35,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  dayCircle: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  dayNumber: { fontSize: 15, fontWeight: '500', color: colors.navy },
+  weekend: { color: colors.muted },
+  dateFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    borderTopWidth: 1,
+    borderColor: colors.line,
+    paddingTop: 12,
+  },
+  cancelDate: { minHeight: 40, justifyContent: 'center' },
+  cancelText: { color: colors.primary, fontWeight: '600', fontSize: 15 },
+  confirmDate: {
+    backgroundColor: colors.primary,
+    minHeight: 40,
+    justifyContent: 'center',
+    paddingHorizontal: 18,
     borderRadius: 8,
   },
-  selectedDay: { backgroundColor: colors.teal },
+  selectedDay: { backgroundColor: colors.primary },
   info: { gap: 4 },
   value: { fontSize: 14, lineHeight: 20, color: colors.navy },
   badge: {
     paddingHorizontal: 8,
-    paddingVertical: 6,
-    borderRadius: 8,
+    paddingVertical: 5,
+    borderRadius: 6,
     fontSize: 12,
     fontWeight: '600',
     overflow: 'hidden',
     maxWidth: '45%',
   },
-  positive: { backgroundColor: colors.mint, color: colors.teal },
-  neutral: { backgroundColor: colors.amberSoft, color: colors.amber },
+  positive: { backgroundColor: '#E6F4EA', color: '#137333' },
+  neutral: { backgroundColor: '#F1F5F9', color: '#475569' },
   recordTitle: { flex: 1, fontSize: 15, fontWeight: '700', color: colors.navy },
   reference: { fontSize: 11, color: colors.muted },
 });

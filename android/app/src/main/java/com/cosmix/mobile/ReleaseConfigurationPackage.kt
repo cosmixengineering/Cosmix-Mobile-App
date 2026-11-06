@@ -13,6 +13,7 @@ class ReleaseConfigurationModule(context: ReactApplicationContext) : ReactContex
   override fun getConstants(): Map<String, Any> = mapOf(
     "apiBaseUrl" to BuildConfig.COSMIX_API_BASE_URL,
     "isDebugBuild" to BuildConfig.DEBUG,
+    "wifiUat" to (BuildConfig.DEBUG && BuildConfig.APPLICATION_ID == "com.cosmix.mobile.wifiuat"),
   )
 }
 

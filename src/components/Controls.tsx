@@ -1,7 +1,7 @@
-import React, { useContext } from 'react';
-import { BottomTabBarHeightContext } from '@react-navigation/bottom-tabs';
+import { LoadingSkeleton } from './ui/LoadingSkeleton';
+import React from 'react';
+import { useInWorkspace } from '../navigation/WorkspaceInteraction';
 import {
-  ActivityIndicator,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -15,19 +15,26 @@ import { colors, layout } from '../theme/theme';
 
 export function Screen({
   children,
-}: React.PropsWithChildren): React.JSX.Element {
-  const tabBarHeight = useContext(BottomTabBarHeightContext);
+  includeTopInset = false,
+  white = false,
+}: React.PropsWithChildren<{
+  includeTopInset?: boolean;
+  white?: boolean;
+}>): React.JSX.Element {
+  const inWorkspace = useInWorkspace();
   return (
     <SafeAreaView
-      style={layout.screen}
+      style={[layout.screen, white && styles.white]}
       edges={
-        tabBarHeight === undefined
+        includeTopInset
+          ? ['top', 'left', 'right', 'bottom']
+          : !inWorkspace
           ? ['left', 'right', 'bottom']
           : ['left', 'right']
       }
     >
       <ScrollView
-        contentContainerStyle={layout.content}
+        contentContainerStyle={[layout.content, styles.scrollContent]}
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="on-drag"
       >
@@ -64,9 +71,7 @@ export function Button({
         pressed && styles.pressed,
       ]}
     >
-      {busy ? (
-        <ActivityIndicator color={secondary ? colors.teal : colors.white} />
-      ) : null}
+      {busy ? <LoadingSkeleton kind="badge" label={title} /> : null}
       <Text style={[styles.buttonText, secondary && styles.secondaryText]}>
         {title}
       </Text>
@@ -119,6 +124,8 @@ export function Notice({
 }
 
 const styles = StyleSheet.create({
+  scrollContent: { paddingBottom: 96 },
+  white: { backgroundColor: colors.white },
   button: {
     minHeight: 44,
     borderRadius: 10,

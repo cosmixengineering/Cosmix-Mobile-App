@@ -13,7 +13,7 @@
 
     <application
       android:name=".MainApplication"
-      android:label="@string/app_name"
+      android:label="${cosmixAppLabel}"
       android:icon="@mipmap/ic_launcher"
       android:roundIcon="@mipmap/ic_launcher_round"
       android:allowBackup="false"
@@ -25,7 +25,7 @@
       <activity
         android:name=".MainActivity"
         android:theme="@style/CosmixLaunchTheme"
-        android:label="@string/app_name"
+        android:label="${cosmixAppLabel}"
         android:configChanges="keyboard|keyboardHidden|orientation|screenLayout|screenSize|smallestScreenSize|uiMode"
         android:launchMode="singleTask"
         android:windowSoftInputMode="adjustResize"

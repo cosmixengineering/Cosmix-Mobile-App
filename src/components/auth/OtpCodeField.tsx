@@ -1,3 +1,5 @@
+import { t } from '../../i18n/language';
+import { useLanguage } from '../../i18n/preference';
 import React, { useRef, useState } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { authColors, authStyles } from '../../theme/authTheme';
@@ -15,6 +17,7 @@ export function OtpCodeField({
   disabled: boolean;
   onSubmit(): void;
 }): React.JSX.Element {
+  useLanguage();
   const input = useRef<React.ComponentRef<typeof TextInput>>(null);
   const [focused, setFocused] = useState(false);
   const [visible, setVisible] = useState(false);
@@ -44,10 +47,9 @@ export function OtpCodeField({
                   styles.focused,
               ]}
             >
-              <Text style={styles.digit}>
-                {value[index] ? (visible ? value[index] : '•') : ''}
-              </Text>
-              {!value[index] && focused && index === value.length ? (
+              {value[index] ? (
+                <Text style={styles.digit}>{visible ? value[index] : '•'}</Text>
+              ) : focused && index === value.length ? (
                 <View style={styles.cursor} />
               ) : null}
             </View>
@@ -55,7 +57,7 @@ export function OtpCodeField({
         </View>
         <TextInput
           ref={input}
-          accessibilityLabel="Six-digit verification code"
+          accessibilityLabel={t('Six-digit verification code')}
           value={value}
           onChangeText={next => onChange(sanitizeOtp(next))}
           keyboardType="number-pad"
@@ -81,14 +83,14 @@ export function OtpCodeField({
       </Pressable>
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel={visible ? 'Hide code' : 'Show code'}
+        accessibilityLabel={visible ? t('Hide code') : t('Show code')}
         disabled={disabled}
         onPress={() => setVisible(current => !current)}
         style={styles.visibility}
       >
         <AuthIcon name={visible ? 'eye-off' : 'eye'} size={17} />
         <Text style={authStyles.caption}>
-          {visible ? 'Hide code' : 'Show code'}
+          {visible ? t('Hide code') : t('Show code')}
         </Text>
       </Pressable>
     </View>
@@ -97,7 +99,7 @@ export function OtpCodeField({
 const styles = StyleSheet.create({
   group: { gap: 2 },
   inputArea: { justifyContent: 'center', minHeight: 52 },
-  cells: { flexDirection: 'row', gap: 8 },
+  cells: { direction: 'ltr', flexDirection: 'row', gap: 8 },
   cell: {
     flex: 1,
     aspectRatio: 1,

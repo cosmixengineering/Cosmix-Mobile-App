@@ -1,3 +1,5 @@
+import { t } from '../../i18n/language';
+import { useLanguage } from '../../i18n/preference';
 import React, { useState } from 'react';
 import { Text, View } from 'react-native';
 import { Button, Field, Notice } from '../Controls';
@@ -35,6 +37,7 @@ export function VehicleRequestForm({
 }: {
   kind: Kind;
 }): React.JSX.Element {
+  useLanguage();
   const [selected, setSelected] = useState('');
   const [trip, setTrip] = useState('');
   const [page, setPage] = useState(1);
@@ -66,7 +69,9 @@ export function VehicleRequestForm({
     <SubmissionFrame
       service="vehicles"
       title={labels[kind]}
-      description="Submit your own vehicle activity with supporting references. Your company reviews eligibility, mileage and claims."
+      description={t(
+        'Submit your own vehicle activity with supporting references. Your company reviews eligibility, mileage and claims.',
+      )}
       route={`/api/v1/me/vehicles/${routes[kind]}`}
       revision={JSON.stringify([
         kind,
@@ -204,7 +209,8 @@ export function VehicleRequestForm({
             {kind === 'fuel' ? (
               <>
                 <ChoiceField
-                  label="Your approved trip"
+                  loading={history.loading}
+                  label={t('Your approved trip')}
                   value={trip}
                   onChange={setTrip}
                   disabled={disabled}
@@ -216,7 +222,7 @@ export function VehicleRequestForm({
                     }))}
                 />
                 <Button
-                  title="Previous trips"
+                  title={t('Previous trips')}
                   secondary
                   disabled={page === 1 || disabled}
                   onPress={() => {
@@ -225,7 +231,7 @@ export function VehicleRequestForm({
                   }}
                 />
                 <Button
-                  title="More trips"
+                  title={t('More trips')}
                   secondary
                   disabled={
                     disabled ||
@@ -237,16 +243,18 @@ export function VehicleRequestForm({
                     setPage(current => current + 1);
                   }}
                 />
-                {input('receipt', 'Receipt reference · optional')}
+                {input('receipt', t('Receipt reference · optional'))}
                 <Text style={layout.muted}>
-                  PKR · approved mileage and published fuel policy determine the
-                  claim.
+                  {t(
+                    'PKR · approved mileage and published fuel policy determine the claim.',
+                  )}
                 </Text>
               </>
             ) : (
               <>
                 <ChoiceField
-                  label="Your assigned vehicle"
+                  loading={custody.loading}
+                  label={t('Your assigned vehicle')}
                   value={selected}
                   onChange={setSelected}
                   disabled={disabled}
@@ -260,10 +268,10 @@ export function VehicleRequestForm({
                 <DateField
                   label={
                     kind === 'maintenance'
-                      ? 'Service date'
+                      ? t('Service date')
                       : kind === 'incident'
-                      ? 'Incident date'
-                      : 'Trip starts on'
+                      ? t('Incident date')
+                      : t('Trip starts on')
                   }
                   value={date}
                   onChange={value => {
@@ -275,69 +283,74 @@ export function VehicleRequestForm({
                 {kind === 'trip' ? (
                   <>
                     <ChoiceField
-                      label="Trip purpose"
+                      label={t('Trip purpose')}
                       value={values.purpose}
                       onChange={value => update('purpose', value)}
                       disabled={disabled}
                       choices={[
-                        'Site to site',
-                        'Complaint visit',
-                        'Field visit',
-                        'Outstation',
-                        'Commute',
+                        t('Site to site'),
+                        t('Complaint visit'),
+                        t('Field visit'),
+                        t('Outstation'),
+                        t('Commute'),
                       ].map((label, index) => ({
                         value: String(index + 1),
                         label,
                       }))}
                     />
-                    {input('start', 'Start time · HH:mm, Asia/Karachi', 5)}
+                    {input('start', t('Start time · HH:mm, Asia/Karachi'), 5)}
                     <DateField
-                      label="Trip ends on"
+                      label={t('Trip ends on')}
                       value={endDate}
                       onChange={setEndDate}
                       disabled={disabled}
                     />
-                    {input('end', 'End time · HH:mm, Asia/Karachi', 5)}
-                    {input('origin', 'Origin', 200)}
-                    {input('destination', 'Destination', 200)}
-                    {input('odometerStart', 'Odometer at start · km', 12, true)}
-                    {input('odometerEnd', 'Odometer at end · km', 12, true)}
-                    {input('mapDistance', 'Map distance · km', 12, true)}
-                    {input('work', 'Work / job reference', 150)}
+                    {input('end', t('End time · HH:mm, Asia/Karachi'), 5)}
+                    {input('origin', t('Origin'), 200)}
+                    {input('destination', t('Destination'), 200)}
+                    {input(
+                      'odometerStart',
+                      t('Odometer at start · km'),
+                      12,
+                      true,
+                    )}
+                    {input('odometerEnd', t('Odometer at end · km'), 12, true)}
+                    {input('mapDistance', t('Map distance · km'), 12, true)}
+                    {input('work', t('Work / job reference'), 150)}
                   </>
                 ) : kind === 'maintenance' ? (
                   <>
                     <ChoiceField
-                      label="Service"
+                      label={t('Service')}
                       value={values.serviceKind}
                       onChange={value => update('serviceKind', value)}
                       disabled={disabled}
                       choices={[
-                        { value: '1', label: 'Tuning' },
-                        { value: '2', label: 'Engine overhaul' },
-                        { value: '3', label: 'Other' },
+                        { value: '1', label: t('Tuning') },
+                        { value: '2', label: t('Engine overhaul') },
+                        { value: '3', label: t('Other') },
                       ]}
                     />
-                    {input('odometer', 'Odometer · km', 12, true)}
+                    {input('odometer', t('Odometer · km'), 12, true)}
                     {input(
                       'outstation',
-                      'Reported approved outstation distance · km',
+                      t('Reported approved outstation distance · km'),
                       12,
                       true,
                     )}
-                    {input('workshop', 'Authorized workshop reference', 200)}
-                    {input('amount', 'Claimed amount · PKR', 12, true)}
+                    {input('workshop', t('Authorized workshop reference'), 200)}
+                    {input('amount', t('Claimed amount · PKR'), 12, true)}
                   </>
                 ) : (
                   <>
-                    {input('start', 'Time · HH:mm, Asia/Karachi', 5)}
+                    {input('start', t('Time · HH:mm, Asia/Karachi'), 5)}
                     {input(
                       'thirdParty',
-                      'Third party details reference · optional',
+                      t('Third party details reference · optional'),
                     )}
                     {input(
                       'insurance',
-                      'Insurance claim reference · optional',
+                      t('Insurance claim reference · optional'),
                       200,
                     )}
                   </>
@@ -345,12 +358,13 @@ export function VehicleRequestForm({
                 {input(
                   'evidence',
                   kind === 'trip'
-                    ? 'Route / journey evidence reference'
-                    : 'Supporting evidence reference',
+                    ? t('Route / journey evidence reference')
+                    : t('Supporting evidence reference'),
                 )}
                 <Text style={layout.muted}>
-                  Use a real company document or evidence reference. No
-                  documents are created by this form.
+                  {t(
+                    'Use a real company document or evidence reference. No documents are created by this form.',
+                  )}
                 </Text>
               </>
             )}

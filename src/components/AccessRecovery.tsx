@@ -1,3 +1,5 @@
+import { t } from '../i18n/language';
+import { useLanguage } from '../i18n/preference';
 import React, { useEffect, useRef, useState } from 'react';
 import { useServices } from '../app/AppProvider';
 import { Button, Notice } from './Controls';
@@ -8,6 +10,7 @@ export function AccessRecovery({
 }: {
   service: string;
 }): React.JSX.Element {
+  useLanguage();
   const { session } = useServices();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -22,11 +25,14 @@ export function AccessRecovery({
     <>
       <Notice
         tone="info"
-        message={`${service} access is currently unavailable. Refresh to check your access. Contact HR if the service remains unavailable.`}
+        message={t(
+          '{0} access is currently unavailable. Refresh to check your access. Contact HR if the service remains unavailable.',
+          service,
+        )}
       />
       {error ? <Notice message={error} /> : null}
       <Button
-        title="Refresh access"
+        title={t('Refresh access')}
         secondary
         busy={busy}
         onPress={async () => {

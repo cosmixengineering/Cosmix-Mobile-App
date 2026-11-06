@@ -1,3 +1,4 @@
+import { displayLocale } from '../../i18n/language';
 import { useCallback, useState } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 import { useServices } from '../../app/AppProvider';
@@ -35,7 +36,7 @@ export function periodDays(date: string, month: boolean) {
   return dateRange(start, shiftDate(start, 6));
 }
 export function dateLabel(date: string, options: Intl.DateTimeFormatOptions) {
-  return new Intl.DateTimeFormat('en-GB', {
+  return new Intl.DateTimeFormat(displayLocale(), {
     ...options,
     timeZone: 'UTC',
   }).format(new Date(date + 'T12:00:00Z'));
@@ -43,14 +44,14 @@ export function dateLabel(date: string, options: Intl.DateTimeFormatOptions) {
 export function shiftTime(day: ScheduleDay, end = false) {
   const instant = end ? day.end : day.start;
   if (!instant) return null;
-  const time = new Intl.DateTimeFormat('en-US', {
+  const time = new Intl.DateTimeFormat(displayLocale('en-US'), {
     timeZone: day.zone,
     hour: '2-digit',
     minute: '2-digit',
     hour12: true,
   }).format(new Date(instant));
   if (!end || !day.start) return time;
-  const localDate = new Intl.DateTimeFormat('en-GB', {
+  const localDate = new Intl.DateTimeFormat(displayLocale(), {
     timeZone: day.zone,
     day: 'numeric',
     month: 'short',
@@ -194,6 +195,7 @@ export function useSchedule(
     selected: known ?? single?.days[0],
     dayError: single?.error,
     rangeError: calendar?.error,
+    rangeLoading: calendarAccess && !calendar,
     loading: singleNeeded ? !single : !calendar,
     retry: () => retry(value => value + 1),
   };

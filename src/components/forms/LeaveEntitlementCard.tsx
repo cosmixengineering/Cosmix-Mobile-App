@@ -1,3 +1,6 @@
+import { LoadingSkeleton } from '../ui/LoadingSkeleton';
+import { t } from '../../i18n/language';
+import { useLanguage } from '../../i18n/preference';
 import React, { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSource } from '../../hooks/useSource';
@@ -21,6 +24,7 @@ export function LeaveEntitlementCard({
   disabled: boolean;
   validRange: boolean;
 }) {
+  useLanguage();
   const [details, setDetails] = useState(false);
   const [choice, setChoice] = useState('');
   const policies = useSource<DataRecord>(
@@ -61,7 +65,7 @@ export function LeaveEntitlementCard({
   return (
     <View style={styles.card}>
       <View style={layout.row}>
-        <Text style={styles.heading}>Leave Entitlement</Text>
+        <Text style={styles.heading}>{t('Leave Entitlement')}</Text>
         <Pressable
           accessibilityRole="button"
           accessibilityState={{ expanded: details, disabled }}
@@ -70,13 +74,13 @@ export function LeaveEntitlementCard({
           hitSlop={8}
         >
           <Text style={styles.link}>
-            {details ? 'Hide details' : 'View details'} ›
+            {details ? t('Hide details') : t('View details')} ›
           </Text>
         </Pressable>
       </View>
       {options.length > 1 && (
         <ChoiceField
-          label="Applicable policy"
+          label={t('Applicable policy')}
           disabled={disabled}
           value={policyId}
           onChange={setChoice}
@@ -90,23 +94,23 @@ export function LeaveEntitlementCard({
         <>
           <Notice message={policies.error || balance.error} />
           <Button
-            title="Retry entitlement"
+            title={t('Retry entitlement')}
             secondary
             disabled={disabled}
             onPress={policies.error ? policies.reload : balance.reload}
           />
         </>
+      ) : policies.loading || balance.loading ? (
+        <LoadingSkeleton label={t('Loading your entitlement…')} />
       ) : !balance.value ? (
         <Text style={layout.muted}>
-          {policies.loading || balance.loading
-            ? 'Loading your entitlement…'
-            : !typeId
-            ? 'Choose a leave type to see your entitlement.'
+          {!typeId
+            ? t('Choose a leave type to see your entitlement.')
             : !validRange
-            ? 'Choose a valid date range.'
+            ? t('Choose a valid date range.')
             : options.length > 1
-            ? 'Choose a policy to see your balance.'
-            : 'No confirmed entitlement for these dates.'}
+            ? t('Choose a policy to see your balance.')
+            : t('No confirmed entitlement for these dates.')}
         </Text>
       ) : (
         <>
@@ -122,17 +126,17 @@ export function LeaveEntitlementCard({
           )}
           <View style={styles.metrics}>
             <Metric
-              label="Annual left"
+              label={t('Annual left')}
               value={fraction(annual?.remainingDays)}
               color="#E7F6ED"
             />
             <Metric
-              label="Annual used"
+              label={t('Annual used')}
               value={fraction(annual?.usedDays)}
               color="#FDEEEF"
             />
             <Metric
-              label="Type left"
+              label={t('Type left')}
               value={fraction(quota?.remainingDays)}
               color="#E8F2FE"
             />
@@ -140,20 +144,20 @@ export function LeaveEntitlementCard({
           {details && (
             <View style={layout.stack6}>
               <InfoRow
-                label="Balance status"
+                label={t('Balance status')}
                 value={text(balance.value.status)}
               />
               <InfoRow
-                label="Annual limit"
-                value={limit === null ? 'Unavailable' : limit + ' days'}
+                label={t('Annual limit')}
+                value={limit === null ? t('Unavailable') : limit + t(' days')}
               />
               <InfoRow
-                label="Fiscal year"
+                label={t('Fiscal year')}
                 value={
                   text(balance.value.fiscalYearStart) +
                   ' – ' +
                   text(balance.value.fiscalYearEndExclusive) +
-                  ' (end exclusive)'
+                  t(' (end exclusive)')
                 }
               />
             </View>
@@ -162,8 +166,9 @@ export function LeaveEntitlementCard({
       )}
       {details && (
         <Text style={layout.muted}>
-          Balances use your published policy and include approved future leave
-          in the fiscal year.
+          {t(
+            'Balances use your published policy and include approved future leave in the fiscal year.',
+          )}
         </Text>
       )}
     </View>

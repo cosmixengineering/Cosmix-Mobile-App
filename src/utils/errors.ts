@@ -1,3 +1,4 @@
+import { t } from '../i18n/language';
 export class AppError extends Error {
   constructor(
     public readonly code: string,
@@ -10,6 +11,7 @@ export class AppError extends Error {
 }
 
 const messages: Record<string, string> = {
+  invalid_profile_photo: 'Choose a readable image from your photo library.',
   encashment_completed_leave_year_required:
     'Choose a policy reference date in a completed leave year.',
   encashment_submission_window_closed:
@@ -131,9 +133,23 @@ const messages: Record<string, string> = {
   camera_cancelled: 'Photo capture was cancelled. No attendance was submitted.',
   invalid_face_image:
     'The photo could not be prepared safely. Please take another photo.',
+  check_in_location_clock_ahead:
+    'Your phone time is ahead of the attendance server. Enable automatic date and time, then try again.',
+  check_in_location_unreliable:
+    'Your phone could not locate you accurately enough for this site. Move closer to an open area at the site and try again.',
+  check_in_location_outside_boundary:
+    'Your phone placed you outside your assigned site. Check in from inside the site boundary.',
+  check_in_boundary_unavailable:
+    'Your site has no active attendance boundary for this shift. Ask HR to check the site assignment.',
+  location_interrupted:
+    'Keep the attendance screen open while your phone locates you. Tap Check in to try again.',
   location_permission: 'Allow precise location access to submit attendance.',
   location_unavailable:
     'Your current location could not be obtained. Turn on precise location and try again.',
+  location_timeout:
+    'Your phone could not get a fresh location in time. Move near a window or outside and try again.',
+  location_provider_unavailable:
+    'Your phone could not provide a location. Check that device Location and Location Accuracy are on, then try again.',
   location_mocked:
     'Attendance cannot use a simulated location. Please use your actual device location.',
   location_stale: 'Your location is no longer current. Please try again.',
@@ -164,23 +180,29 @@ export function apiProblemCode(candidate: unknown, fallback: string): string {
 function knownMessage(code: string): string | undefined {
   const mileage = maintenanceMilestone.exec(code);
   if (mileage) {
-    return `Approved outstation travel totals ${mileage[1]} km. This maintenance milestone requires ${mileage[2]} km.`;
+    return t(
+      'Approved outstation travel totals {0} km. This maintenance milestone requires {1} km.',
+      mileage[1],
+      mileage[2],
+    );
   }
   return Object.prototype.hasOwnProperty.call(messages, code)
-    ? messages[code]
+    ? t(messages[code])
     : undefined;
 }
 
 export function describeError(error: unknown): string {
   return (
     knownMessage(errorCode(error)) ??
-    'This action could not be completed. Please try again or contact your supervisor.'
+    t(
+      'This action could not be completed. Please try again or contact your supervisor.',
+    )
   );
 }
 
 export function messageForCode(code: string): string {
   return (
     knownMessage(code) ??
-    'Please contact your supervisor if this issue continues.'
+    t('Please contact your supervisor if this issue continues.')
   );
 }

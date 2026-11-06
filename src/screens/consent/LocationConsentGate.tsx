@@ -1,3 +1,7 @@
+import { LoadingSkeleton } from '../../components/ui/LoadingSkeleton';
+import { LanguageSwitch } from '../../components/LanguageSwitch';
+import { t } from '../../i18n/language';
+import { useLanguage } from '../../i18n/preference';
 import React, {
   createContext,
   useCallback,
@@ -47,6 +51,7 @@ const denyLocation = async () => false;
 function RequiredLocationConsent({
   children,
 }: React.PropsWithChildren): React.JSX.Element {
+  useLanguage();
   const { session } = useServices();
   const [service] = useState(() => new LocationConsentService(session));
   const [status, setStatus] = useState<LocationConsentStatus | null>(null);
@@ -66,7 +71,9 @@ function RequiredLocationConsent({
       if (request === sequence.current) {
         setStatus(null);
         setError(
-          'The company location policy could not be checked. Retry before continuing, or sign out.',
+          t(
+            'The company location policy could not be checked. Retry before continuing, or sign out.',
+          ),
         );
       }
       return false;
@@ -90,7 +97,7 @@ function RequiredLocationConsent({
   const signOut = () => {
     session
       .signOut()
-      .catch(() => setError('Sign out could not finish. Please retry.'));
+      .catch(() => setError(t('Sign out could not finish. Please retry.')));
   };
   if (status?.status === 'PendingConsent') {
     return (
@@ -106,50 +113,54 @@ function RequiredLocationConsent({
   }
   if (status && !status.hasActivePolicy) {
     return (
-      <Screen>
+      <Screen includeTopInset>
+        <LanguageSwitch />
         <View style={layout.card}>
-          <Text style={layout.title}>Location Tracking Notice</Text>
+          <Text style={layout.title}>{t('Location Tracking Notice')}</Text>
           <Notice
-            message="Location collection policy has not been configured by HR. Attendance location tracking is unavailable."
+            message={t(
+              'Location collection policy has not been configured by HR. Attendance location tracking is unavailable.',
+            )}
             tone="info"
           />
           <Text style={[layout.body, styles.policyExplanation]}>
-            Your company has not published an active location notice. Native
-            location tracking cannot begin until HR configures and publishes the
-            required policy.
+            {t(
+              'Your company has not published an active location notice. Native location tracking cannot begin until HR configures and publishes the required policy.',
+            )}
           </Text>
           <Button
-            title="Refresh policy status"
+            title={t('Refresh policy status')}
             onPress={() => {
               refresh();
             }}
             busy={loading}
           />
-          <Button title="Sign out" secondary onPress={signOut} />
+          <Button title={t('Sign out')} secondary onPress={signOut} />
         </View>
       </Screen>
     );
   }
   if (!status || error) {
     return (
-      <Screen>
+      <Screen includeTopInset>
+        <LanguageSwitch />
         <View style={layout.card}>
-          <Text style={layout.title}>Location policy</Text>
+          <Text style={layout.title}>{t('Location policy')}</Text>
           {error ? (
             <Notice message={error} tone="error" />
           ) : (
-            <Text style={layout.body}>
-              Checking the current company location policy…
-            </Text>
+            <LoadingSkeleton
+              label={t('Checking the current company location policy…')}
+            />
           )}
           <Button
-            title="Retry policy check"
+            title={t('Retry policy check')}
             onPress={() => {
               refresh();
             }}
             busy={loading}
           />
-          <Button title="Sign out" secondary onPress={signOut} />
+          <Button title={t('Sign out')} secondary onPress={signOut} />
         </View>
       </Screen>
     );

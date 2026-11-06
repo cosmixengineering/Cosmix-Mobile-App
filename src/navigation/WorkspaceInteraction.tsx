@@ -16,6 +16,10 @@ export function WorkspaceInteraction({
   );
 }
 
+export function useInWorkspace() {
+  return useContext(InteractionContext) !== null;
+}
+
 export function useWorkspaceInteraction() {
   const context = useContext(InteractionContext);
   if (!context) throw new Error('WorkspaceInteraction is required');

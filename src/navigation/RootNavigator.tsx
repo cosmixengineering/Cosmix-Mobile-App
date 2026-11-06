@@ -1,5 +1,9 @@
+import { LoadingSkeleton } from '../components/ui/LoadingSkeleton';
+import { t } from '../i18n/language';
+import { useLanguage } from '../i18n/preference';
 import React from 'react';
-import { ActivityIndicator, Text, View } from 'react-native';
+import { Text } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useSession } from '../app/AppProvider';
@@ -16,27 +20,35 @@ import { LocationConsentGate } from '../screens/consent/LocationConsentGate';
 
 const Stack = createNativeStackNavigator<RootStackParams>();
 export function RootNavigator(): React.JSX.Element {
+  const language = useLanguage();
   const auth = useSession();
   const reducedMotion = useMotionPreference();
   if (auth.status === 'booting') {
     return (
-      <View style={[layout.screen, layout.content]}>
+      <SafeAreaView style={[layout.screen, layout.content]}>
         <Text style={layout.title}>COSMIX</Text>
-        <ActivityIndicator color={colors.teal} />
-        <Text style={layout.muted}>Restoring your secure session…</Text>
-      </View>
+        <LoadingSkeleton kind="list" rows={2} />
+        <Text style={layout.muted}>{t('Restoring your secure session…')}</Text>
+      </SafeAreaView>
     );
   }
   const navigation = (
-    <NavigationContainer>
+    <NavigationContainer direction={language === 'ur' ? 'rtl' : 'ltr'}>
       <Stack.Navigator
         screenOptions={{
-          headerStyle: { backgroundColor: colors.white },
+          animation: reducedMotion ? 'none' : 'slide_from_right',
+          animationDuration: 260,
+          headerStyle: {
+            backgroundColor: colors.white,
+          },
           headerTitleAlign: 'center',
-          headerTitleStyle: { fontSize: 17, fontWeight: '700' },
+          headerTitleStyle: { fontSize: 16, fontWeight: '700' },
           headerTintColor: colors.navy,
           headerShadowVisible: false,
-          contentStyle: { backgroundColor: colors.background },
+          contentStyle: {
+            backgroundColor: colors.background,
+            direction: language === 'ur' ? 'rtl' : 'ltr',
+          },
         }}
       >
         {auth.status === 'authenticated' ? (
@@ -49,12 +61,12 @@ export function RootNavigator(): React.JSX.Element {
             <Stack.Screen
               name="ServiceDetail"
               component={ServiceDetailScreen}
-              options={{ title: 'My records' }}
+              options={{ title: t('My records') }}
             />
             <Stack.Screen
               name="RequestForm"
               component={RequestFormScreen}
-              options={{ title: 'New request' }}
+              options={{ title: t('New request') }}
             />
           </Stack.Group>
         ) : (

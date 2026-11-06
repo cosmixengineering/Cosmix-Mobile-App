@@ -1,3 +1,7 @@
+import { ProfileAvatar } from '../components/ProfilePhoto';
+import { LoadingSkeleton } from '../components/ui/LoadingSkeleton';
+import { displayLocale, t } from '../i18n/language';
+import { useLanguage } from '../i18n/preference';
 import React, { useState } from 'react';
 import {
   Image,
@@ -36,7 +40,7 @@ type Props = CompositeScreenProps<
 >;
 const time = (stamp: unknown, zone: string) =>
   typeof stamp === 'string' && Number.isFinite(Date.parse(stamp))
-    ? new Intl.DateTimeFormat('en-US', {
+    ? new Intl.DateTimeFormat(displayLocale('en-US'), {
         hour: 'numeric',
         minute: '2-digit',
         timeZone: zone,
@@ -51,6 +55,7 @@ function Section({
   onOpen?: () => void;
   children: React.ReactNode;
 }) {
+  useLanguage();
   return (
     <View style={s.section}>
       <View style={s.headingRow}>
@@ -58,11 +63,11 @@ function Section({
         {onOpen && (
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel={'View all ' + title}
+            accessibilityLabel={t('View all ') + title}
             hitSlop={8}
             onPress={onOpen}
           >
-            <Text style={s.more}>View all ›</Text>
+            <Text style={s.more}>{t('View all ›')}</Text>
           </Pressable>
         )}
       </View>
@@ -102,6 +107,7 @@ function Tile({
   );
 }
 export function DashboardScreen({ navigation }: Props) {
+  useLanguage();
   const [showMonth, setShowMonth] = useState(false);
   const auth = useSession(),
     data = useAttendanceData(),
@@ -115,10 +121,10 @@ export function DashboardScreen({ navigation }: Props) {
       timeZone: zone,
     }).format(now),
   );
-  const displayName = auth.account?.displayName || 'Employee';
+  const displayName = auth.account?.displayName || t('Employee');
   const assignment = home.details?.profile.value;
   const location = text(assignment?.siteName, text(assignment?.branchName, ''));
-  const title = text(assignment?.designationTitle, 'Employee');
+  const title = text(assignment?.designationTitle, t('Employee'));
   const rows = home.details?.calendar.value;
   const day = Array.isArray(rows?.days)
     ? rows.days.find(
@@ -169,27 +175,25 @@ export function DashboardScreen({ navigation }: Props) {
   const checkedIn = data.state?.state === 'checked_in';
   const stamp =
     data.state?.activeSession?.startsAtUtc ?? receipt?.receivedAtUtc;
-  const state = data.loading
-    ? 'Loading…'
-    : !data.state
-    ? 'Unavailable'
+  const state = !data.state
+    ? t('Unavailable')
     : checkedIn
-    ? 'Checked in'
+    ? t('Checked in')
     : data.state.state === 'conflict'
-    ? 'Needs review'
+    ? t('Needs review')
     : receipt
-    ? 'Checked out'
-    : 'No active session';
+    ? t('Checked out')
+    : t('No active session');
   const ring =
     late !== null &&
     (receipt || data.state?.activeSession?.businessDate === home.today)
       ? late > 0
-        ? 'Late'
-        : 'On time'
+        ? t('Late')
+        : t('On time')
       : checkedIn
-      ? 'On duty'
+      ? t('On duty')
       : receipt
-      ? 'Recorded'
+      ? t('Recorded')
       : '—';
   const shift = home.details?.shift.value;
   const openHistory = () =>
@@ -204,10 +208,10 @@ export function DashboardScreen({ navigation }: Props) {
   };
   const summaryTiles: readonly [string, string, HomeSymbol, string, string][] =
     [
-      ['Present', 'presentDays', 'present', '#288E56', '#EFF8E9'],
-      ['Leave', 'leaveDays', 'leave', '#DE6831', '#FFF4E9'],
-      ['Late', 'lateDays', 'late', '#D85E34', '#FFF2EE'],
-      ['Absent', 'absentDays', 'absent', '#BF4554', '#FDF0F1'],
+      [t('Present'), 'presentDays', 'present', '#009654', '#E6F8EF'],
+      [t('Leave'), 'leaveDays', 'leave', '#477BCC', '#EDF3FF'],
+      [t('Late'), 'lateDays', 'late', '#E68906', '#FFF5E1'],
+      [t('Absent'), 'absentDays', 'absent', '#CB424C', '#FDECEF'],
     ];
   return (
     <SafeAreaView style={s.screen} edges={['top', 'left', 'right']}>
@@ -230,7 +234,7 @@ export function DashboardScreen({ navigation }: Props) {
           <View style={s.headerActions}>
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel="Open notifications"
+              accessibilityLabel={t('Open notifications')}
               onPress={() =>
                 navigation.navigate('ServiceDetail', {
                   service: 'notifications',
@@ -242,26 +246,35 @@ export function DashboardScreen({ navigation }: Props) {
             </Pressable>
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel="My profile"
+              accessibilityLabel={t('My profile')}
               onPress={() => navigation.navigate('Profile')}
-              style={[s.round, s.avatar]}
+              style={s.round}
             >
-              <Text style={s.initials}>
-                {displayName
-                  .split(/\s+/)
-                  .slice(0, 2)
-                  .map(word => word[0])
-                  .join('')
-                  .toUpperCase()}
-              </Text>
+              <ProfileAvatar
+                size={42}
+                initials={
+                  displayName
+                    .trim()
+                    .split(/\s+/)
+                    .slice(0, 2)
+                    .map(word => word[0])
+                    .join('')
+                    .toUpperCase() || 'CO'
+                }
+              />
             </Pressable>
           </View>
         </View>
         <View style={s.welcome}>
           <View style={s.flex}>
             <Text style={s.greeting}>
-              Good {hour < 12 ? 'morning' : hour < 18 ? 'afternoon' : 'evening'}
-              !
+              {t(
+                hour < 12
+                  ? 'Good morning!'
+                  : hour < 18
+                  ? 'Good afternoon!'
+                  : 'Good evening!',
+              )}
             </Text>
             <Text style={s.name}>{displayName}</Text>
             <Text style={s.muted}>
@@ -271,7 +284,7 @@ export function DashboardScreen({ navigation }: Props) {
           <View style={s.date}>
             <HomeIcon name="schedule" size={15} color="#16396D" />
             <Text style={s.dateText}>
-              {new Intl.DateTimeFormat('en-GB', {
+              {new Intl.DateTimeFormat(displayLocale(), {
                 weekday: 'short',
                 day: 'numeric',
                 month: 'short',
@@ -281,20 +294,26 @@ export function DashboardScreen({ navigation }: Props) {
             </Text>
           </View>
         </View>
-        <View style={s.hero}>
-          <HeroBackdrop />
-          <View style={s.flex}>
-            <Text style={s.heroLabel}>Today’s Attendance</Text>
-            <Text style={s.heroTime}>{time(stamp, zone)}</Text>
-            {!!location && <Text style={s.heroLabel}>{location}</Text>}
-            <View style={[s.badge, checkedIn && s.active]}>
-              <Text style={s.badgeText}>{state}</Text>
+        {data.loading && !data.state ? (
+          <View style={s.loadingHero}>
+            <LoadingSkeleton />
+          </View>
+        ) : (
+          <View style={s.hero}>
+            <HeroBackdrop />
+            <View style={s.flex}>
+              <Text style={s.heroLabel}>{t('Today’s Attendance')}</Text>
+              <Text style={s.heroTime}>{time(stamp, zone)}</Text>
+              {!!location && <Text style={s.heroLabel}>{location}</Text>}
+              <View style={[s.badge, checkedIn && s.active]}>
+                <Text style={s.badgeText}>{state}</Text>
+              </View>
+            </View>
+            <View style={[s.ring, ring === 'Late' && s.lateRing]}>
+              <Text style={s.ringText}>{ring}</Text>
             </View>
           </View>
-          <View style={[s.ring, ring === 'Late' && s.lateRing]}>
-            <Text style={s.ringText}>{ring}</Text>
-          </View>
-        </View>
+        )}
         {data.error ? (
           <Text accessibilityRole="alert" style={s.muted}>
             {data.error}
@@ -302,106 +321,134 @@ export function DashboardScreen({ navigation }: Props) {
         ) : null}
         <View style={s.tiles}>
           <Tile
-            label={'Mark\nAttendance'}
-            icon="punch"
+            label={t('Mark\nAttendance')}
+            icon="faceScan"
             color="#099774"
             bg="#E1F9ED"
             enabled={data.permitted}
             onPress={() => navigation.navigate('Attendance')}
           />
           <Tile
-            label={'Apply\nLeave'}
-            icon="leave"
+            label={t('Apply\nLeave')}
+            icon="applyLeave"
             color="#D75B24"
             bg="#FFF0E6"
             enabled={canLeave}
             onPress={() => navigation.navigate('ApplyLeave')}
           />
           <Tile
-            label={'My\nSchedule'}
-            icon="schedule"
+            label={t('My\nSchedule')}
+            icon="shiftClock"
             color="#2354AB"
             bg="#E8F4FF"
             enabled={home.shiftAllowed}
             onPress={openSchedule}
           />
           <Tile
-            label="Request"
-            icon="request"
+            label={t('Request')}
+            icon="editRequest"
             color="#7047B2"
             bg="#F1EAFD"
             onPress={() => navigation.navigate('Services')}
           />
         </View>
-        <Section
-          title={showMonth ? 'Monthly summary' : 'Today’s summary'}
-          onOpen={home.calendarAllowed ? openCalendar : undefined}
-        >
-          <Pressable
-            accessibilityRole="button"
-            onPress={() => setShowMonth(!showMonth)}
-            hitSlop={6}
-          >
-            <Text style={s.month}>
-              {showMonth ? 'Show today' : 'Show month to date'} ›
+        <View style={[s.section, s.summaryCard]}>
+          <View style={s.summaryHeader}>
+            <Text accessibilityRole="header" style={s.heading}>
+              {showMonth ? t('Monthly summary') : t('Today’s summary')}
             </Text>
-          </Pressable>
-          <View style={s.tiles}>
-            {summaryTiles.map(([label, key, icon, color, bg]) => (
-              <View key={key} style={[s.stat, { backgroundColor: bg }]}>
-                <HomeIcon name={icon} color={color} size={21} />
-                <Text style={s.count}>
-                  {(showMonth ? numeric(rows?.[key]) : dailyCounts[key]) ?? '—'}
-                </Text>
-                <Text style={s.caption}>{label}</Text>
-              </View>
-            ))}
+            <Pressable
+              accessibilityRole="button"
+              onPress={() => setShowMonth(current => !current)}
+              hitSlop={6}
+            >
+              <Text style={s.more}>
+                {showMonth ? t('Show today') : t('Show month to date')} ›
+              </Text>
+            </Pressable>
           </View>
+          {home.loading && !home.details ? (
+            <LoadingSkeleton kind="summary" />
+          ) : (
+            <View style={s.stats}>
+              {summaryTiles.map(([label, key, icon, color, bg], index) => (
+                <View
+                  accessible
+                  key={key}
+                  style={[s.stat, index > 0 && s.divider]}
+                >
+                  <View style={[s.statIcon, { backgroundColor: bg }]}>
+                    <HomeIcon name={icon} color={color} size={21} />
+                  </View>
+                  <Text style={s.count}>
+                    {(showMonth ? numeric(rows?.[key]) : dailyCounts[key]) ??
+                      '—'}
+                  </Text>
+                  <Text style={s.caption}>{label}</Text>
+                </View>
+              ))}
+            </View>
+          )}
           {(!home.calendarAllowed || home.details?.calendar.error) && (
             <Text style={s.muted}>
               {home.details?.calendar.error ||
-                'Monthly attendance access is unavailable.'}
+                t('Monthly attendance access is unavailable.')}
             </Text>
+          )}
+          {home.calendarAllowed && (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={t('Attendance calendar')}
+              onPress={openCalendar}
+              hitSlop={6}
+              style={s.calendarLink}
+            >
+              <Text style={s.more}>{t('Attendance calendar')} ›</Text>
+            </Pressable>
+          )}
+        </View>
+        <Section
+          title={t('Upcoming schedule')}
+          onOpen={home.shiftAllowed ? openSchedule : undefined}
+        >
+          {home.loading && !home.details ? (
+            <LoadingSkeleton kind="list" rows={1} />
+          ) : (
+            <View style={s.row}>
+              <View style={[s.smallIcon, s.blue]}>
+                <HomeIcon name="site" size={20} color="#2354AB" />
+              </View>
+              <View style={s.flex}>
+                <Text style={s.rowTitle}>
+                  {shift?.status === 'scheduled'
+                    ? t('Scheduled shift')
+                    : shift
+                    ? status(shift.status)
+                    : home.loading
+                    ? t('Loading schedule…')
+                    : t('Schedule unavailable')}
+                </Text>
+                <Text style={s.muted}>
+                  {shift
+                    ? [
+                        text(shift.businessDate),
+                        shift.startsAt && shift.endsAt
+                          ? time(shift.startsAt, text(shift.timeZone, zone)) +
+                            ' – ' +
+                            time(shift.endsAt, text(shift.timeZone, zone))
+                          : null,
+                      ]
+                        .filter(Boolean)
+                        .join('   •   ')
+                    : home.details?.shift.error ||
+                      t('Your assigned schedule appears here.')}
+                </Text>
+              </View>
+            </View>
           )}
         </Section>
         <Section
-          title="Upcoming schedule"
-          onOpen={home.shiftAllowed ? openSchedule : undefined}
-        >
-          <View style={s.row}>
-            <View style={[s.smallIcon, s.blue]}>
-              <HomeIcon name="site" size={20} color="#2354AB" />
-            </View>
-            <View style={s.flex}>
-              <Text style={s.rowTitle}>
-                {shift?.status === 'scheduled'
-                  ? 'Scheduled shift'
-                  : shift
-                  ? status(shift.status)
-                  : home.loading
-                  ? 'Loading schedule…'
-                  : 'Schedule unavailable'}
-              </Text>
-              <Text style={s.muted}>
-                {shift
-                  ? [
-                      text(shift.businessDate),
-                      shift.startsAt && shift.endsAt
-                        ? time(shift.startsAt, text(shift.timeZone, zone)) +
-                          ' – ' +
-                          time(shift.endsAt, text(shift.timeZone, zone))
-                        : null,
-                    ]
-                      .filter(Boolean)
-                      .join('   •   ')
-                  : home.details?.shift.error ||
-                    'Your assigned schedule appears here.'}
-              </Text>
-            </View>
-          </View>
-        </Section>
-        <Section
-          title="Recent activity"
+          title={t('Recent activity')}
           onOpen={data.permitted ? openHistory : undefined}
         >
           {data.history.slice(0, 3).map(r => (
@@ -411,28 +458,36 @@ export function DashboardScreen({ navigation }: Props) {
               </View>
               <View style={s.flex}>
                 <Text style={s.rowTitle}>
-                  {r.action === 'CheckIn' ? 'Check in' : 'Check out'} ·{' '}
+                  {r.action === 'CheckIn' ? t('Check in') : t('Check out')} ·{' '}
                   {outcomeLabel(r.outcome)}
                 </Text>
                 <Text style={s.muted}>{localTime(r.receivedAtUtc, zone)}</Text>
               </View>
             </View>
           ))}
-          {!data.history.length && (
-            <Text style={s.muted}>
-              {data.loading
-                ? 'Loading attendance…'
-                : data.state
-                ? 'No attendance submissions in the last seven days.'
-                : 'Attendance history unavailable.'}
-            </Text>
-          )}
+          {!data.history.length &&
+            (data.loading ? (
+              <LoadingSkeleton kind="list" rows={2} />
+            ) : (
+              <Text style={s.muted}>
+                {data.state
+                  ? t('No attendance submissions in the last seven days.')
+                  : t('Attendance history unavailable.')}
+              </Text>
+            ))}
         </Section>
       </ScrollView>
     </SafeAreaView>
   );
 }
 const s = StyleSheet.create({
+  loadingHero: {
+    padding: 20,
+    borderRadius: 18,
+    backgroundColor: '#fff',
+    minHeight: 120,
+    justifyContent: 'center',
+  },
   screen: { flex: 1, backgroundColor: '#F7F9FC' },
   content: {
     width: '100%',
@@ -457,8 +512,6 @@ const s = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  avatar: { backgroundColor: '#DFEBF8' },
-  initials: { color: '#204676', fontWeight: '700' },
   welcome: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -541,16 +594,40 @@ const s = StyleSheet.create({
   section: { backgroundColor: 'white', borderRadius: 12, padding: 11, gap: 7 },
   heading: { color: ink, fontSize: 16, fontWeight: '700' },
   more: { color: muted, fontSize: 12 },
-  month: { color: muted, fontSize: 11 },
-  stat: {
-    flex: 1,
-    paddingVertical: 6,
-    alignItems: 'center',
-    borderRadius: 11,
-    gap: 3,
+  summaryCard: {
+    borderColor: '#E3E9F0',
+    borderWidth: StyleSheet.hairlineWidth,
+    gap: 12,
+    paddingVertical: 13,
   },
-  count: { fontSize: 18, color: ink, fontWeight: '700' },
-  caption: { fontSize: 12, color: ink },
+  summaryHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    flexWrap: 'wrap',
+    gap: 5,
+  },
+  stats: { flexDirection: 'row', paddingVertical: 2 },
+  stat: { flex: 1, minWidth: 0, alignItems: 'center', gap: 3 },
+  divider: {
+    borderStartWidth: StyleSheet.hairlineWidth,
+    borderColor: '#CFD7E2',
+  },
+  statIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  count: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#48546D',
+    fontVariant: ['tabular-nums'],
+  },
+  caption: { fontSize: 13, color: muted, textAlign: 'center' },
+  calendarLink: { alignSelf: 'flex-end' },
   row: {
     flexDirection: 'row',
     alignItems: 'center',

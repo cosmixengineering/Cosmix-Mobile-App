@@ -1,3 +1,4 @@
+import { LanguageSwitch } from '../LanguageSwitch';
 import React, {
   createContext,
   useContext,
@@ -9,10 +10,12 @@ import {
   Animated,
   AppState,
   Easing,
+  Keyboard,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
   StyleSheet,
+  TextInput,
   useWindowDimensions,
 } from 'react-native';
 import {
@@ -36,6 +39,25 @@ export function AuthFrame({
   const progress = useRef(new Animated.Value(1)).current;
   const { height } = useWindowDimensions();
   const insets = useSafeAreaInsets();
+  const scroll = useRef<React.ComponentRef<typeof ScrollView>>(null);
+  const viewportHeight = useRef(0);
+  const revealInput = React.useCallback(() => {
+    const input = TextInput.State.currentlyFocusedInput();
+    const content = scroll.current?.getInnerViewRef();
+    if (!input || !content || !viewportHeight.current) return;
+    input.measureLayout(content, (_x, y, _width, fieldHeight) => {
+      const clearance = Math.min(80, viewportHeight.current / 4);
+      scroll.current?.scrollTo({
+        y: Math.max(0, y + fieldHeight + clearance - viewportHeight.current),
+        animated: !reduced,
+      });
+    });
+  }, [reduced]);
+  useEffect(() => {
+    if (!focused || Platform.OS !== 'android') return;
+    const subscription = Keyboard.addListener('keyboardDidShow', revealInput);
+    return () => subscription.remove();
+  }, [focused, revealInput]);
   const motion = focused && active && !reduced;
   useEffect(() => {
     const subscription = AppState.addEventListener('change', next =>
@@ -61,13 +83,16 @@ export function AuthFrame({
   }, [motion, progress]);
   return (
     <MotionContext.Provider value={motion}>
-      <KeyboardAvoidingView
-        style={styles.screen}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      >
+      <KeyboardAvoidingView style={styles.screen} behavior="padding">
         <AuthAmbientBackground motion={motion} />
         <SafeAreaView style={styles.safe}>
           <ScrollView
+            ref={scroll}
+            onLayout={event => {
+              viewportHeight.current = event.nativeEvent.layout.height;
+              if (focused && Platform.OS === 'android' && Keyboard.isVisible())
+                revealInput();
+            }}
             contentContainerStyle={styles.content}
             keyboardShouldPersistTaps="handled"
             keyboardDismissMode="on-drag"
@@ -96,6 +121,7 @@ export function AuthFrame({
                 },
               ]}
             >
+              <LanguageSwitch />
               {children}
             </Animated.View>
           </ScrollView>

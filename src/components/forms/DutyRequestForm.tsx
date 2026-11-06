@@ -1,3 +1,5 @@
+import { t } from '../../i18n/language';
+import { useLanguage } from '../../i18n/preference';
 import React, { useState } from 'react';
 import { Text, View } from 'react-native';
 import { Button, Field, Notice } from '../Controls';
@@ -23,6 +25,7 @@ export function DutyRequestForm({
 }: {
   kind: 'overtime' | 'correction';
 }): React.JSX.Element {
+  useLanguage();
   const overtime = kind === 'overtime';
   const [date, setDate] = useState(businessToday);
   const [endDate, setEndDate] = useState(businessToday);
@@ -69,15 +72,19 @@ export function DutyRequestForm({
         session?.validDutyEvidence === true &&
         typeof session.endsAtUtc === 'string' &&
         intervals.length > 0));
-  const title = overtime ? 'Overtime request' : 'Attendance review request';
+  const title = overtime
+    ? t('Overtime request')
+    : t('Attendance review request');
   return (
     <SubmissionFrame
       service={overtime ? 'overtime' : 'corrections'}
       title={title}
       description={
         overtime
-          ? 'Submit verified duty for independent overtime review.'
-          : 'Describe missing or incorrect attendance for independent HR review.'
+          ? t('Submit verified duty for independent overtime review.')
+          : t(
+              'Describe missing or incorrect attendance for independent HR review.',
+            )
       }
       route={overtime ? `${base}/requests` : base}
       revision={JSON.stringify([
@@ -139,9 +146,15 @@ export function DutyRequestForm({
             },
             summary: [
               title,
-              `Business date ${date}`,
-              `${startDate} ${start} → ${endDate} ${end} · Asia/Karachi`,
-              activity === '1' ? 'Work' : 'Company travel',
+              t('Business date {0}', date),
+              t(
+                '{0} {1} → {2} {3} · Asia/Karachi',
+                startDate,
+                start,
+                endDate,
+                end,
+              ),
+              activity === '1' ? t('Work') : t('Company travel'),
               clean,
               written,
             ],
@@ -178,17 +191,22 @@ export function DutyRequestForm({
           summary: [
             title,
             mode === '1'
-              ? 'Check In time'
+              ? t('Check In time')
               : mode === '2'
-              ? 'Check Out time'
-              : 'Documented missing duty',
-            `Business date ${date}`,
-            `${startDate} ${start}${
-              manual ? ` → ${endDate} ${end}` : ''
-            } · Asia/Karachi`,
+              ? t('Check Out time')
+              : t('Documented missing duty'),
+            t('Business date {0}', date),
+            t(
+              '{0} {1}{2} · Asia/Karachi',
+              startDate,
+              start,
+              manual ? ` → ${endDate} ${end}` : '',
+            ),
             clean,
             written,
-            'HR must verify the evidence. Submission does not create a successful face check or punch.',
+            t(
+              'HR must verify the evidence. Submission does not create a successful face check or punch.',
+            ),
           ],
         };
       }}
@@ -196,7 +214,7 @@ export function DutyRequestForm({
       {disabled => (
         <View style={layout.card}>
           <DateField
-            label="Business date"
+            label={t('Business date')}
             value={date}
             onChange={value => {
               setDate(value);
@@ -208,7 +226,7 @@ export function DutyRequestForm({
           />
           {!overtime ? (
             <ChoiceField
-              label="What needs review?"
+              label={t('What needs review?')}
               value={mode}
               onChange={value => {
                 setMode(value);
@@ -216,9 +234,9 @@ export function DutyRequestForm({
               }}
               disabled={disabled}
               choices={[
-                { value: '4', label: 'Missing duty' },
-                { value: '1', label: 'Check In time' },
-                { value: '2', label: 'Check Out time' },
+                { value: '4', label: t('Missing duty') },
+                { value: '1', label: t('Check In time') },
+                { value: '2', label: t('Check Out time') },
               ]}
             />
           ) : null}
@@ -226,7 +244,7 @@ export function DutyRequestForm({
             <Notice message={initial.error || punchSource.error} />
           ) : null}
           <Button
-            title="Refresh duty sources"
+            title={t('Refresh duty sources')}
             secondary
             busy={initial.loading || punchSource.loading}
             disabled={disabled}
@@ -237,7 +255,8 @@ export function DutyRequestForm({
           />
           {overtime || mode !== '4' ? (
             <ChoiceField
-              label="Work session"
+              loading={initial.loading || punchSource.loading}
+              label={t('Work session')}
               value={selected}
               onChange={setSelected}
               disabled={disabled}
@@ -258,10 +277,10 @@ export function DutyRequestForm({
           ) : null}
           {source ? (
             <InfoRow
-              label="Availability"
+              label={t('Availability')}
               value={
                 locked
-                  ? 'This period is locked'
+                  ? t('This period is locked')
                   : overtime
                   ? status(eligible?.status)
                   : status(source.routingStatus)
@@ -271,24 +290,24 @@ export function DutyRequestForm({
           {overtime ? (
             <>
               <ChoiceField
-                label="Activity"
+                label={t('Activity')}
                 value={activity}
                 onChange={setActivity}
                 disabled={disabled}
                 choices={[
-                  { value: '1', label: 'Work' },
-                  { value: '2', label: 'Company travel' },
+                  { value: '1', label: t('Work') },
+                  { value: '2', label: t('Company travel') },
                 ]}
               />
               {intervals.map((row, index) => (
                 <Text key={index} style={layout.muted}>
-                  Eligible interval:{' '}
+                  {t('Eligible interval:')}{' '}
                   {localTime(text(row.startsAtUtc), 'Asia/Karachi')} –{' '}
                   {localTime(text(row.endsAtUtc), 'Asia/Karachi')}
                 </Text>
               ))}
               <Field
-                label="Job reference (optional)"
+                label={t('Job reference (optional)')}
                 value={job}
                 onChangeText={setJob}
                 maxLength={200}
@@ -297,7 +316,9 @@ export function DutyRequestForm({
             </>
           ) : null}
           <DateField
-            label={overtime || mode === '4' ? 'Start date' : 'Requested date'}
+            label={
+              overtime || mode === '4' ? t('Start date') : t('Requested date')
+            }
             value={startDate}
             onChange={setStartDate}
             disabled={disabled}
@@ -305,8 +326,8 @@ export function DutyRequestForm({
           <Field
             label={
               overtime || mode === '4'
-                ? 'Start time · HH:mm, Asia/Karachi'
-                : 'Requested time · HH:mm, Asia/Karachi'
+                ? t('Start time · HH:mm, Asia/Karachi')
+                : t('Requested time · HH:mm, Asia/Karachi')
             }
             value={start}
             onChangeText={setStart}
@@ -317,13 +338,13 @@ export function DutyRequestForm({
           {overtime || mode === '4' ? (
             <>
               <DateField
-                label="End date"
+                label={t('End date')}
                 value={endDate}
                 onChange={setEndDate}
                 disabled={disabled}
               />
               <Field
-                label="End time · HH:mm, Asia/Karachi"
+                label={t('End time · HH:mm, Asia/Karachi')}
                 value={end}
                 onChangeText={setEnd}
                 maxLength={5}
@@ -333,7 +354,7 @@ export function DutyRequestForm({
             </>
           ) : null}
           <Field
-            label="Reason"
+            label={t('Reason')}
             value={note}
             onChangeText={setNote}
             editable={!disabled}
@@ -341,7 +362,7 @@ export function DutyRequestForm({
             maxLength={1000}
           />
           <Field
-            label="Written evidence / work details"
+            label={t('Written evidence / work details')}
             value={evidence}
             onChangeText={setEvidence}
             editable={!disabled}
@@ -352,8 +373,12 @@ export function DutyRequestForm({
             tone="info"
             message={
               overtime
-                ? 'Eligibility and approval are checked again by the server. Overtime approval is separate from payment.'
-                : 'Attendance requests go to HR for independent review. Your existing submission records stay available.'
+                ? t(
+                    'Eligibility and approval are checked again by the server. Overtime approval is separate from payment.',
+                  )
+                : t(
+                    'Attendance requests go to HR for independent review. Your existing submission records stay available.',
+                  )
             }
           />
         </View>

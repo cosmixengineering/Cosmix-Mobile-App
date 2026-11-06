@@ -1,3 +1,6 @@
+import { LoadingSkeleton } from '../ui/LoadingSkeleton';
+import { t } from '../../i18n/language';
+import { useLanguage } from '../../i18n/preference';
 import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
@@ -28,12 +31,42 @@ import { isGuid, isTimestamp } from '../../utils/validation';
 import { localTime } from '../../utils/presentation';
 
 const evidenceKinds = [
-  { value: '1', label: 'Medical' },
-  { value: '2', label: 'Admit card' },
-  { value: '3', label: 'Date sheet' },
-  { value: '4', label: 'Emergency' },
-  { value: '5', label: 'Injury medical' },
-  { value: '6', label: 'Other' },
+  {
+    value: '1',
+    get label() {
+      return t('Medical');
+    },
+  },
+  {
+    value: '2',
+    get label() {
+      return t('Admit card');
+    },
+  },
+  {
+    value: '3',
+    get label() {
+      return t('Date sheet');
+    },
+  },
+  {
+    value: '4',
+    get label() {
+      return t('Emergency');
+    },
+  },
+  {
+    value: '5',
+    get label() {
+      return t('Injury medical');
+    },
+  },
+  {
+    value: '6',
+    get label() {
+      return t('Other');
+    },
+  },
 ];
 
 export function LeaveRequestForm({
@@ -41,10 +74,14 @@ export function LeaveRequestForm({
 }: {
   previousRequestId?: string;
 }): React.JSX.Element {
+  useLanguage();
   const { session } = useServices();
   const navigation = useNavigation();
   useLayoutEffect(() => {
-    navigation.setOptions({ title: 'Apply Leave', headerTitleAlign: 'center' });
+    navigation.setOptions({
+      title: t('Apply Leave'),
+      headerTitleAlign: 'center',
+    });
   }, [navigation]);
   const [types, setTypes] = useState<DataRecord[]>([]);
   const [typesFailure, setTypesFailure] = useState('');
@@ -89,7 +126,9 @@ export function LeaveRequestForm({
         if (active) {
           setTypesFailure(
             failure instanceof AppError && failure.status === 404
-              ? 'Leave types are unavailable on the connected server. Contact HR if this continues.'
+              ? t(
+                  'Leave types are unavailable on the connected server. Contact HR if this continues.',
+                )
               : describeError(failure),
           );
         }
@@ -187,12 +226,16 @@ export function LeaveRequestForm({
   return (
     <SubmissionFrame
       service="leaves"
-      title={previousRequestId ? 'Resubmit returned leave' : 'Apply Leave'}
+      title={
+        previousRequestId ? t('Resubmit returned leave') : t('Apply Leave')
+      }
       intro={previousRequestId ? undefined : <LeaveBanner />}
       route="/api/v1/leaves/mine"
       revision={revision}
       ready={previousReady && !!type && !loading}
-      description="Review your scheduled time before sending your request to HR."
+      description={t(
+        'Review your scheduled time before sending your request to HR.',
+      )}
       onSubmitted={async () => {
         await picker.remove(filesRef.current);
         setFiles([]);
@@ -272,9 +315,11 @@ export function LeaveRequestForm({
           body,
           summary: [
             text(type.name),
-            `${days.length} scheduled ${
-              days.length === 1 ? 'day' : 'days'
-            } requested`,
+            t(
+              '{0} scheduled {1} requested',
+              days.length,
+              days.length === 1 ? 'day' : 'days',
+            ),
             ...days.map(
               day =>
                 `${day.date}: ${localTime(
@@ -283,10 +328,10 @@ export function LeaveRequestForm({
                 )} – ${localTime(day.endsAtUtc, 'Asia/Karachi')}`,
             ),
             ...(skipped.length
-              ? [`Rest days excluded: ${skipped.join(', ')}`]
+              ? [t('Rest days excluded: {0}', skipped.join(', '))]
               : []),
             cleanReason,
-            `${attachments.length} evidence document(s)`,
+            t('{0} evidence document(s)', attachments.length),
           ],
         };
       }}
@@ -306,7 +351,7 @@ export function LeaveRequestForm({
               <Notice message={typesFailure} />
               <Button
                 secondary
-                title="Retry leave types"
+                title={t('Retry leave types')}
                 disabled={disabled}
                 onPress={() => retryTypes(n => n + 1)}
               />
@@ -315,50 +360,59 @@ export function LeaveRequestForm({
           {!loadingTypes && !typesFailure && types.length === 0 ? (
             <Notice
               tone="info"
-              message="No active leave types are available. Ask HR which leave policy applies to you."
+              message={t(
+                'No active leave types are available. Ask HR which leave policy applies to you.',
+              )}
             />
           ) : null}
           {error ? <Notice message={error} /> : null}
           <View style={styles.form}>
-            <LeaveTypeField
-              value={typeId}
-              onChange={setTypeId}
-              disabled={disabled || loading || loadingTypes || !types.length}
-              choices={types.map(item => ({
-                value: text(item.id, ''),
-                label: text(item.name),
-              }))}
-            />
+            {loadingTypes ? (
+              <LoadingSkeleton kind="field" label={t('Leave type')} />
+            ) : (
+              <LeaveTypeField
+                value={typeId}
+                onChange={setTypeId}
+                disabled={disabled || loading || loadingTypes || !types.length}
+                choices={types.map(item => ({
+                  value: text(item.id, ''),
+                  label: text(item.name),
+                }))}
+              />
+            )}
             {type?.requiresEvidence === true || requiredEvidence.length > 0 ? (
               <Notice
                 tone="info"
                 message={
                   requiredEvidence.length
-                    ? `Required documents: ${requiredEvidence
-                        .map(
-                          kind =>
-                            evidenceKinds.find(
-                              item => item.value === String(kind),
-                            )?.label,
-                        )
-                        .join(', ')}.`
-                    : 'Supporting evidence is required for this leave type.'
+                    ? t(
+                        'Required documents: {0}.',
+                        requiredEvidence
+                          .map(
+                            kind =>
+                              evidenceKinds.find(
+                                item => item.value === String(kind),
+                              )?.label,
+                          )
+                          .join(', '),
+                      )
+                    : t('Supporting evidence is required for this leave type.')
                 }
               />
             ) : null}
             <ChoiceField
-              label="Leave duration"
+              label={t('Leave duration')}
               value={mode}
               onChange={setMode}
               disabled={disabled}
               choices={[
-                { value: 'full', label: 'Full scheduled days' },
-                { value: 'hourly', label: 'Part of one shift' },
+                { value: 'full', label: t('Full scheduled days') },
+                { value: 'hourly', label: t('Part of one shift') },
               ]}
             />
             <View style={styles.dates}>
               <LeaveDateField
-                label="From Date"
+                label={t('From Date')}
                 value={from}
                 disabled={disabled}
                 onChange={value => {
@@ -371,7 +425,7 @@ export function LeaveRequestForm({
               />
               {mode === 'full' ? (
                 <LeaveDateField
-                  label="To Date"
+                  label={t('To Date')}
                   value={to}
                   min={from}
                   onChange={setTo}
@@ -382,21 +436,21 @@ export function LeaveRequestForm({
             {mode !== 'full' && (
               <>
                 <Field
-                  label="Start time · company time (HH:mm)"
+                  label={t('Start time · company time (HH:mm)')}
                   value={start}
                   onChangeText={setStart}
                   maxLength={5}
                   editable={!disabled}
                 />
                 <LeaveDateField
-                  label="End date"
+                  label={t('End date')}
                   value={endDate}
                   min={from}
                   onChange={setEndDate}
                   disabled={disabled}
                 />
                 <Field
-                  label="End time · company time (HH:mm)"
+                  label={t('End time · company time (HH:mm)')}
                   value={end}
                   onChangeText={setEnd}
                   maxLength={5}
@@ -404,27 +458,29 @@ export function LeaveRequestForm({
                 />
               </>
             )}
-            <Text style={layout.label}>Total Days</Text>
+            <Text style={layout.label}>{t('Total Days')}</Text>
             <Text style={styles.total} accessibilityLiveRegion="polite">
               {calendarDays === null
-                ? 'Choose a valid range of up to 366 days.'
+                ? t('Choose a valid range of up to 366 days.')
                 : mode === 'full'
-                ? `${calendarDays} calendar ${
-                    calendarDays === 1 ? 'day' : 'days'
-                  }`
-                : 'Part of one scheduled shift'}
+                ? t(
+                    '{0} calendar {1}',
+                    calendarDays,
+                    calendarDays === 1 ? 'day' : 'days',
+                  )
+                : t('Part of one scheduled shift')}
             </Text>
             {mode === 'full' && (
               <Text style={styles.hint}>
-                Rest days are excluded during schedule review.
+                {t('Rest days are excluded during schedule review.')}
               </Text>
             )}
             <Field
-              label="Reason"
+              label={t('Reason')}
               value={note}
               onChangeText={setNote}
               multiline
-              placeholder="Enter your reason for leave…"
+              placeholder={t('Enter your reason for leave…')}
               maxLength={1000}
               editable={!disabled}
             />
@@ -437,20 +493,21 @@ export function LeaveRequestForm({
               style={styles.more}
             >
               <Text style={styles.link}>
-                {more ? 'Hide' : 'Add'} contact and handover details
+                {more ? t('Hide') : t('Add')}{' '}
+                {t('contact and handover details')}
               </Text>
             </Pressable>
             {more && (
               <>
                 <Field
-                  label="Contact during leave · optional"
+                  label={t('Contact during leave · optional')}
                   value={contact}
                   onChangeText={setContact}
                   maxLength={200}
                   editable={!disabled}
                 />
                 <Field
-                  label="Handover notes · optional"
+                  label={t('Handover notes · optional')}
                   value={handover}
                   onChangeText={setHandover}
                   multiline
@@ -461,10 +518,11 @@ export function LeaveRequestForm({
             )}
           </View>
           <View style={layout.card}>
-            <Text style={layout.heading}>Evidence</Text>
+            <Text style={layout.heading}>{t('Evidence')}</Text>
             <Text style={layout.muted}>
-              PNG, JPEG or PDF. Up to four documents, 10 MB each and 20 MB
-              combined. Choose a distinct purpose for each document.
+              {t(
+                'PNG, JPEG or PDF. Up to four documents, 10 MB each and 20 MB combined. Choose a distinct purpose for each document.',
+              )}
             </Text>
             {files.map(file => (
               <View key={file.id} style={layout.stack8}>
@@ -472,7 +530,7 @@ export function LeaveRequestForm({
                   {file.name} · {(file.size / 1048576).toFixed(1)}MB
                 </Text>
                 <ChoiceField
-                  label="Document purpose"
+                  label={t('Document purpose')}
                   value={String(file.kind)}
                   disabled={disabled}
                   choices={evidenceKinds}
@@ -489,7 +547,9 @@ export function LeaveRequestForm({
               </View>
             ))}
             <Button
-              title={files.length ? 'Replace evidence' : 'Choose evidence'}
+              title={
+                files.length ? t('Replace evidence') : t('Choose evidence')
+              }
               secondary
               busy={loading}
               disabled={disabled}
@@ -497,7 +557,7 @@ export function LeaveRequestForm({
             />
             {files.length ? (
               <Button
-                title="Remove evidence"
+                title={t('Remove evidence')}
                 secondary
                 disabled={disabled || loading}
                 onPress={() =>

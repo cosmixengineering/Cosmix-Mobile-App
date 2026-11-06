@@ -9,6 +9,10 @@ import Svg, {
   Stop,
 } from 'react-native-svg';
 export type HomeSymbol =
+  | 'faceScan'
+  | 'applyLeave'
+  | 'shiftClock'
+  | 'editRequest'
   | 'punch'
   | 'leave'
   | 'schedule'
@@ -19,6 +23,14 @@ export type HomeSymbol =
   | 'absent'
   | 'site';
 const paths: Record<HomeSymbol, string> = {
+  faceScan:
+    'M8 3H4v4m12-4h4v4M4 17v4h4m12-4v4h-4M15 9a3 3 0 1 1-6 0 3 3 0 0 1 6 0ZM7 17a5 5 0 0 1 10 0',
+  applyLeave:
+    'M12 20H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v4M7 2v4m8-4v4M3 9h16M22 17a5 5 0 1 1-10 0 5 5 0 0 1 10 0ZM17 14.5v5m-2.5-2.5h5',
+  shiftClock:
+    'M12 20H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v4M7 2v4m8-4v4M3 9h16M22 17a5 5 0 1 1-10 0 5 5 0 0 1 10 0ZM17 14v3l2 1',
+  editRequest:
+    'M8 4H5v17h9M16 4h3v5M9 3h2a1 1 0 0 1 2 0h2v3H9zM8 10h7m-7 4h4M14 18l6-6 2 2-6 6-3 1z',
   punch:
     'M3 11a9 9 0 0 1 18 0M6 12a6 6 0 1 1 12 0c0 3-.4 5-1.4 8M9 13v-1a3 3 0 0 1 6 0c0 3-.3 7-2.4 10M12 12c0 5-1.2 7.5-3.3 10M5.7 14.5c0 2.2-.6 3.8-1.4 5M8.6 16c-.2 2-1 4.1-2 5',
   leave: 'M4 5h16v16H4zM8 3v4m8-4v4M4 10h16m-12 4h2m3 0h3m-8 3h2',

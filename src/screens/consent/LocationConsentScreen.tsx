@@ -1,3 +1,6 @@
+import { LanguageSwitch } from '../../components/LanguageSwitch';
+import { t } from '../../i18n/language';
+import { useLanguage } from '../../i18n/preference';
 import React, { useRef, useState } from 'react';
 import {
   ScrollView,
@@ -28,6 +31,7 @@ export function LocationConsentScreen({
   onPolicyChanged,
   onSignOut,
 }: Props): React.JSX.Element {
+  useLanguage();
   const [agreed, setAgreed] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
@@ -45,7 +49,9 @@ export function LocationConsentScreen({
     } catch {
       setAgreed(false);
       setError(
-        'Acceptance was not confirmed. Check the current policy again and review it before retrying.',
+        t(
+          'Acceptance was not confirmed. Check the current policy again and review it before retrying.',
+        ),
       );
       await onPolicyChanged();
     } finally {
@@ -54,11 +60,12 @@ export function LocationConsentScreen({
     }
   };
   return (
-    <Screen>
+    <Screen includeTopInset>
+      <LanguageSwitch />
       <View style={layout.card}>
-        <Text style={layout.title}>Location Collection Notice</Text>
+        <Text style={layout.title}>{t('Location Collection Notice')}</Text>
         <Text style={styles.subheading}>
-          Policy Version {status.activePolicyVersion}
+          {t('Policy Version')} {status.activePolicyVersion}
         </Text>
         <ScrollView
           style={styles.noticeBox}
@@ -79,18 +86,20 @@ export function LocationConsentScreen({
             {agreed && <Text style={styles.checkmark}>✓</Text>}
           </View>
           <Text style={styles.checkboxLabel}>
-            I have read and accept the company location collection policy
+            {t('I have read and accept the company location collection policy')}
           </Text>
         </TouchableOpacity>
         <View style={styles.buttonGroup}>
           <Button
-            title={submitting ? 'Recording acceptance…' : 'Accept and Continue'}
+            title={
+              submitting ? t('Recording acceptance…') : t('Accept and Continue')
+            }
             onPress={handleAccept}
             disabled={!agreed || submitting}
             busy={submitting}
           />
           <Button
-            title="Refresh policy"
+            title={t('Refresh policy')}
             secondary
             onPress={() => {
               setAgreed(false);
@@ -99,7 +108,7 @@ export function LocationConsentScreen({
             disabled={submitting}
           />
           <Button
-            title="Decline and sign out"
+            title={t('Decline and sign out')}
             secondary
             onPress={onSignOut}
             disabled={submitting}

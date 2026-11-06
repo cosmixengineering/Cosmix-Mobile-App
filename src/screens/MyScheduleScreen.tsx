@@ -1,11 +1,8 @@
+import { LoadingSkeleton } from '../components/ui/LoadingSkeleton';
+import { t } from '../i18n/language';
+import { useLanguage } from '../i18n/preference';
 import React, { useCallback, useState } from 'react';
-import {
-  ActivityIndicator,
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import Svg, { Path } from 'react-native-svg';
 import { useSession } from '../app/AppProvider';
@@ -61,13 +58,13 @@ function Glyph({
 function dayTitle(day: ScheduleDay) {
   switch (day.status) {
     case 'scheduled':
-      return day.location ? day.location + ' shift' : 'Assigned shift';
+      return day.location ? day.location + t(' shift') : t('Assigned shift');
     case 'rest_day':
-      return 'Rest day';
+      return t('Rest day');
     case 'unassigned':
-      return 'No shift assigned';
+      return t('No shift assigned');
     case 'site_not_assigned':
-      return 'No site assigned';
+      return t('No site assigned');
     default:
       return day.status.replace(/_/g, ' ');
   }
@@ -76,11 +73,12 @@ function interval(day: ScheduleDay) {
   const start = shiftTime(day),
     end = shiftTime(day, true);
   if (start && end) return start + ' – ' + end;
-  if (start) return 'Starts ' + start;
-  if (end) return 'Ends ' + end;
-  return day.status === 'scheduled' ? 'Times unavailable' : null;
+  if (start) return t('Starts ') + start;
+  if (end) return t('Ends ') + end;
+  return day.status === 'scheduled' ? t('Times unavailable') : null;
 }
 function DayDetail({ day, plan }: { day: ScheduleDay; plan: boolean }) {
+  useLanguage();
   const start = shiftTime(day);
   const times = interval(day);
   return (
@@ -106,23 +104,23 @@ function DayDetail({ day, plan }: { day: ScheduleDay; plan: boolean }) {
       </View>
       {plan && day.status === 'scheduled' && (
         <View style={s.plan}>
-          <Text style={s.itemTitle}>Shift details</Text>
+          <Text style={s.itemTitle}>{t('Shift details')}</Text>
           {(
             [
-              ['Scheduled time', day.scheduledMinutes],
-              ['Paid break', day.paidBreak],
-              ['Unpaid break', day.unpaidBreak],
+              [t('Scheduled time'), day.scheduledMinutes],
+              [t('Paid break'), day.paidBreak],
+              [t('Unpaid break'), day.unpaidBreak],
             ] as const
           ).map(([label, value]) => (
             <View key={label} style={s.between}>
               <Text style={s.body}>{label}</Text>
               <Text style={s.itemTitle}>
-                {value === null ? 'Unavailable' : value + ' min'}
+                {value === null ? t('Unavailable') : value + t(' min')}
               </Text>
             </View>
           ))}
           <View style={s.between}>
-            <Text style={s.body}>Time zone</Text>
+            <Text style={s.body}>{t('Time zone')}</Text>
             <Text style={s.itemTitle}>{day.zone}</Text>
           </View>
         </View>
@@ -131,11 +129,12 @@ function DayDetail({ day, plan }: { day: ScheduleDay; plan: boolean }) {
   );
 }
 export function MyScheduleScreen(): React.JSX.Element {
+  useLanguage();
   const auth = useSession();
   if (!auth.account || !canOpenService('shift', auth))
     return (
       <Screen>
-        <AccessRecovery service="My schedule" />
+        <AccessRecovery service={t('My schedule')} />
       </Screen>
     );
   return (
@@ -155,6 +154,7 @@ function Schedule({
   employee: string;
   calendarAccess: boolean;
 }) {
+  useLanguage();
   const [tab, setTab] = useState<Tab>('This Week');
   const [today, setToday] = useState(businessToday);
   useFocusEffect(
@@ -191,7 +191,7 @@ function Schedule({
       <View style={s.tabs} accessibilityRole="tablist">
         {tabs.map(name => (
           <Pressable
-            key={name}
+            key={t(name)}
             accessibilityRole="tab"
             accessibilityState={{ selected: tab === name }}
             onPress={() => setTab(name)}
@@ -207,7 +207,9 @@ function Schedule({
         <View style={s.between}>
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel={month ? 'Previous month' : 'Previous week'}
+            accessibilityLabel={
+              month ? t('Previous month') : t('Previous week')
+            }
             onPress={() => move(-1)}
             style={s.arrow}
           >
@@ -215,7 +217,7 @@ function Schedule({
           </Pressable>
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel="Return to today"
+            accessibilityLabel={t('Return to today')}
             onPress={() => {
               setToday(businessToday());
               pick(null);
@@ -235,7 +237,7 @@ function Schedule({
           </Pressable>
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel={month ? 'Next month' : 'Next week'}
+            accessibilityLabel={month ? t('Next month') : t('Next week')}
             onPress={() => move(1)}
             style={s.arrow}
           >
@@ -243,7 +245,15 @@ function Schedule({
           </Pressable>
         </View>
         <View style={s.week}>
-          {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
+          {[
+            t('Sun'),
+            t('Mon'),
+            t('Tue'),
+            t('Wed'),
+            t('Thu'),
+            t('Fri'),
+            t('Sat'),
+          ].map(day => (
             <Text key={day} style={s.weekday}>
               {day}
             </Text>
@@ -286,7 +296,7 @@ function Schedule({
       <View style={s.card}>
         <View style={s.between}>
           <Text style={s.heading}>
-            {date === today ? 'Today, ' : ''}
+            {date === today ? t('Today, ') : ''}
             {dateLabel(date, {
               day: 'numeric',
               month: 'short',
@@ -294,15 +304,10 @@ function Schedule({
             })}
           </Text>
           {data.selected?.status === 'scheduled' && (
-            <Text style={s.badge}>Working day</Text>
+            <Text style={s.badge}>{t('Working day')}</Text>
           )}
         </View>
-        {data.loading && (
-          <ActivityIndicator
-            color={palette.navy}
-            accessibilityLabel="Loading schedule"
-          />
-        )}
+        {data.loading && <LoadingSkeleton label={t('Loading schedule')} />}
         {data.dayError && (
           <Text accessibilityRole="alert" style={s.body}>
             {data.dayError}
@@ -316,16 +321,18 @@ function Schedule({
         <View style={s.between}>
           <Text style={s.heading}>
             {month
-              ? 'Month schedule'
+              ? t('Month schedule')
               : tab === 'Shift Plan'
-              ? 'Week at a glance'
-              : 'Week schedule'}
+              ? t('Week at a glance')
+              : t('Week schedule')}
           </Text>
           <Pressable
             accessibilityRole="button"
             onPress={() => setTab(month ? 'This Week' : 'This Month')}
           >
-            <Text style={s.link}>{month ? 'View week' : 'View month'} ›</Text>
+            <Text style={s.link}>
+              {month ? t('View week') : t('View month')} ›
+            </Text>
           </Pressable>
         </View>
         {data.rangeError && (
@@ -335,49 +342,53 @@ function Schedule({
         )}
         {(!calendarAccess || data.rangeError) && (
           <Text style={s.caption}>
-            Select a date to load its individual roster.
+            {t('Select a date to load its individual roster.')}
           </Text>
         )}
-        {days.map(key => {
-          const day = knownDay(key);
-          return (
-            <Pressable
-              key={key}
-              onPress={() => pick(key)}
-              accessibilityRole="button"
-              accessibilityState={{ selected: key === date }}
-              style={[s.agenda, key === date && s.selectedRow]}
-            >
-              <View style={s.stamp}>
-                <Text style={s.itemTitle}>
-                  {dateLabel(key, { weekday: 'short' })}
-                </Text>
-                <Text style={s.caption}>
-                  {dateLabel(key, { day: 'numeric', month: 'short' })}
-                </Text>
-              </View>
-              <View
-                style={[s.dot, day?.status === 'scheduled' && s.greenDot]}
-              />
-              <View style={s.grow}>
-                <Text style={s.itemTitle}>
-                  {day ? dayTitle(day) : 'View day'}
-                </Text>
-                {day && interval(day) && (
-                  <Text style={s.caption}>{interval(day)}</Text>
-                )}
-              </View>
-              <Text style={s.chevron}>›</Text>
-            </Pressable>
-          );
-        })}
+        {data.rangeLoading ? (
+          <LoadingSkeleton kind="list" />
+        ) : (
+          days.map(key => {
+            const day = knownDay(key);
+            return (
+              <Pressable
+                key={key}
+                onPress={() => pick(key)}
+                accessibilityRole="button"
+                accessibilityState={{ selected: key === date }}
+                style={[s.agenda, key === date && s.selectedRow]}
+              >
+                <View style={s.stamp}>
+                  <Text style={s.itemTitle}>
+                    {dateLabel(key, { weekday: 'short' })}
+                  </Text>
+                  <Text style={s.caption}>
+                    {dateLabel(key, { day: 'numeric', month: 'short' })}
+                  </Text>
+                </View>
+                <View
+                  style={[s.dot, day?.status === 'scheduled' && s.greenDot]}
+                />
+                <View style={s.grow}>
+                  <Text style={s.itemTitle}>
+                    {day ? dayTitle(day) : t('View day')}
+                  </Text>
+                  {day && interval(day) && (
+                    <Text style={s.caption}>{interval(day)}</Text>
+                  )}
+                </View>
+                <Text style={s.chevron}>›</Text>
+              </Pressable>
+            );
+          })
+        )}
       </View>
       <Pressable
         accessibilityRole="button"
         onPress={data.retry}
         style={s.refresh}
       >
-        <Text style={s.link}>Refresh schedule</Text>
+        <Text style={s.link}>{t('Refresh schedule')}</Text>
       </Pressable>
     </Screen>
   );

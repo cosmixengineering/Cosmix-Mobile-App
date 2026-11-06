@@ -1,4 +1,5 @@
 import type { BackendApi, RequestOptions } from '../services/api/ApiClient';
+import { environment } from '../config/environment';
 import type {
   CurrentAccount,
   OtpChallenge,
@@ -83,10 +84,11 @@ export class SessionManager implements BackendApi {
       deviceSecret: await this.deviceSecret(),
       ...this.device,
     };
+    const base = environment.wifiUat
+      ? '/api/v1/uat/mobile/otp'
+      : '/api/v1/auth/mobile/otp';
     const response = await this.api.request<unknown>(
-      previousChallengeId
-        ? '/api/v1/auth/mobile/otp/resend'
-        : '/api/v1/auth/mobile/otp/request',
+      base + (previousChallengeId ? '/resend' : '/request'),
       {
         method: 'POST',
         body: previousChallengeId

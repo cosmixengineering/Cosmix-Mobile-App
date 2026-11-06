@@ -1,3 +1,6 @@
+import { LoadingSkeleton } from './ui/LoadingSkeleton';
+import { t } from '../i18n/language';
+import { useLanguage } from '../i18n/preference';
 import React, { useState } from 'react';
 import { Text, View } from 'react-native';
 import { Notice } from './Controls';
@@ -18,6 +21,7 @@ import { layout } from '../theme/theme';
 
 /** Read-only balance selection needs leave access, independently of applying or reading a roster. */
 export function LeaveBalancePanel(): React.JSX.Element {
+  useLanguage();
   const [type, setType] = useState('');
   const [policy, setPolicy] = useState('');
   const [date, setDate] = useState(businessToday);
@@ -41,13 +45,15 @@ export function LeaveBalancePanel(): React.JSX.Element {
     : null;
   return (
     <View style={layout.card}>
-      <Text style={layout.heading}>Your exact leave balance</Text>
+      <Text style={layout.heading}>{t('Your exact leave balance')}</Text>
       <Text style={layout.muted}>
-        Choose a leave type and applicable company policy. The date selects its
-        fiscal year; approved usage includes recorded future approved leave.
+        {t(
+          'Choose a leave type and applicable company policy. The date selects its fiscal year; approved usage includes recorded future approved leave.',
+        )}
       </Text>
       <ChoiceField
-        label="Leave type"
+        loading={types.loading}
+        label={t('Leave type')}
         value={type}
         onChange={value => {
           setType(value);
@@ -65,7 +71,7 @@ export function LeaveBalancePanel(): React.JSX.Element {
         }
       />
       <DateField
-        label="Balance reference date"
+        label={t('Balance reference date')}
         value={date}
         onChange={value => {
           setDate(value);
@@ -74,12 +80,13 @@ export function LeaveBalancePanel(): React.JSX.Element {
       />
       {options.value ? (
         <InfoRow
-          label="Policy availability"
+          label={t('Policy availability')}
           value={status(options.value.status)}
         />
       ) : null}
       <ChoiceField
-        label="Applicable policy"
+        loading={options.loading}
+        label={t('Applicable policy')}
         value={policy}
         onChange={setPolicy}
         choices={candidates.map(row => ({
@@ -87,8 +94,8 @@ export function LeaveBalancePanel(): React.JSX.Element {
           label: `${text(row.name)} · ${text(row.effectiveFrom)}`,
         }))}
       />
-      {types.loading || options.loading || balance.loading ? (
-        <Text style={layout.muted}>Loading current company records…</Text>
+      {balance.loading ? (
+        <LoadingSkeleton label={t('Loading current company records…')} />
       ) : null}
       {types.error || options.error || balance.error ? (
         <Notice message={types.error || options.error || balance.error} />
@@ -96,54 +103,58 @@ export function LeaveBalancePanel(): React.JSX.Element {
       {balance.value ? (
         <>
           <InfoRow
-            label="Balance status"
+            label={t('Balance status')}
             value={status(balance.value.status)}
           />
           <InfoRow
-            label="Fiscal year"
-            value={`${text(balance.value.fiscalYearStart)} → ${text(
-              balance.value.fiscalYearEndExclusive,
-            )} (end exclusive)`}
+            label={t('Fiscal year')}
+            value={t(
+              '{0} → {1} (end exclusive)',
+              text(balance.value.fiscalYearStart),
+              text(balance.value.fiscalYearEndExclusive),
+            )}
           />
           <InfoRow
-            label="Annual remaining"
-            value={annual ? fraction(annual.remainingDays) : 'Unavailable'}
+            label={t('Annual remaining')}
+            value={annual ? fraction(annual.remainingDays) : t('Unavailable')}
           />
           <InfoRow
-            label="Annual used"
-            value={annual ? fraction(annual.usedDays) : 'Unavailable'}
+            label={t('Annual used')}
+            value={annual ? fraction(annual.usedDays) : t('Unavailable')}
           />
           {annual ? (
             <InfoRow
-              label="Annual limit"
+              label={t('Annual limit')}
               value={
                 numeric(annual.limitDays) !== null
-                  ? `${annual.limitDays} days`
-                  : 'Unavailable'
+                  ? t('{0} days', annual.limitDays)
+                  : t('Unavailable')
               }
             />
           ) : null}
           <InfoRow
-            label="Type remaining"
+            label={t('Type remaining')}
             value={
               quota
                 ? fraction(quota.remainingDays)
-                : 'No confirmed type quota supplied'
+                : t('No confirmed type quota supplied')
             }
           />
           <InfoRow
-            label="Eligible service"
+            label={t('Eligible service')}
             value={
               balance.value.serviceEligible === true
-                ? 'Eligible'
+                ? t('Eligible')
                 : balance.value.serviceEligible === false
-                ? 'Not eligible under this policy'
-                : 'Unavailable'
+                ? t('Not eligible under this policy')
+                : t('Unavailable')
             }
           />
           <Notice
             tone="info"
-            message="These are the backend's exact recorded balances. A balance view does not approve a new leave request or reserve leave."
+            message={t(
+              "These are the backend's exact recorded balances. A balance view does not approve a new leave request or reserve leave.",
+            )}
           />
         </>
       ) : null}

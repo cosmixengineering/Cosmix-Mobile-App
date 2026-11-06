@@ -1,3 +1,5 @@
+import { t } from '../i18n/language';
+import { useLanguage } from '../i18n/preference';
 import React, { useEffect, useRef, useState } from 'react';
 import { Keyboard, StyleSheet, Text, TextInput, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -23,6 +25,7 @@ import {
 export function LoginScreen({
   navigation,
 }: NativeStackScreenProps<RootStackParams, 'Login'>): React.JSX.Element {
+  useLanguage();
   const { session } = useServices();
   const auth = useSession();
   const [phone, setPhone] = useState('');
@@ -54,7 +57,7 @@ export function LoginScreen({
     if (flight.current) return;
     if (!valid) {
       setPhoneError(
-        phoneError || 'Enter 10 digits after +92, starting with 3.',
+        phoneError || t('Enter 10 digits after +92, starting with 3.'),
       );
       return;
     }
@@ -80,30 +83,34 @@ export function LoginScreen({
         <View style={[authStyles.stack, styles.headerText]}>
           <Text style={styles.brand}>COSMIX</Text>
           <Text accessibilityRole="header" style={authStyles.title}>
-            Login account
+            {t('Login account')}
           </Text>
         </View>
-        <View accessibilityLabel="Pakistan" style={styles.country}>
+        <View accessibilityLabel={t('Pakistan')} style={styles.country}>
           <PakistanFlag />
           <Text style={styles.countryLabel}>PK</Text>
         </View>
       </View>
       <Text style={authStyles.body}>
-        Hello, welcome back to your workspace.
+        {t('Hello, welcome back to your workspace.')}
       </Text>
       <AuthBrandLogo />
       <View style={styles.form}>
-        <AuthFieldFrame label="Phone number" focused={focused} disabled={busy}>
+        <AuthFieldFrame
+          label={t('Phone number')}
+          focused={focused}
+          disabled={busy}
+        >
           <View style={[styles.phone, !!phoneError && styles.invalidPhone]}>
             <View
-              accessibilityLabel="Pakistan calling code +92"
+              accessibilityLabel={t('Pakistan calling code +92')}
               style={styles.prefix}
             >
               <PakistanFlag size={24} />
               <Text style={styles.code}>+92</Text>
             </View>
             <TextInput
-              accessibilityLabel="Mobile number"
+              accessibilityLabel={t('Mobile number')}
               value={phone}
               onChangeText={changePhone}
               placeholder="300 1234567"
@@ -120,7 +127,9 @@ export function LoginScreen({
               onBlur={() => {
                 setFocused(false);
                 if (!phoneError && phone.length !== 10)
-                  setPhoneError('Enter 10 digits after +92, starting with 3.');
+                  setPhoneError(
+                    t('Enter 10 digits after +92, starting with 3.'),
+                  );
               }}
               style={styles.input}
             />
@@ -138,8 +147,8 @@ export function LoginScreen({
         ) : (
           <Text style={authStyles.caption}>
             {phone.length > 0 && phone.length < 10
-              ? `${phone.length}/10 digits entered`
-              : 'Use the mobile number registered with HR.'}
+              ? t('{0}/10 digits entered', phone.length)
+              : t('Use the mobile number registered with HR.')}
           </Text>
         )}
         {error ? (
@@ -148,14 +157,16 @@ export function LoginScreen({
           <Notice message={messageForCode(auth.message)} tone="info" />
         ) : null}
         <AuthButton
-          title={busy ? 'Sending code…' : 'Send code'}
-          accessibilityLabel="Send code"
+          title={busy ? t('Sending code…') : t('Send code')}
+          accessibilityLabel={t('Send code')}
           onPress={submit}
           busy={busy}
           disabled={!valid}
         />
         <Text style={[authStyles.caption, authStyles.centered]}>
-          If your number is eligible, you’ll receive a six-digit code by SMS.
+          {t(
+            'If your number is eligible, you’ll receive a six-digit code by SMS.',
+          )}
         </Text>
       </View>
       <View style={styles.footer}>
@@ -163,7 +174,9 @@ export function LoginScreen({
         <NeedHelpLink onPress={() => setHelp(true)} disabled={busy} />
         <View style={styles.protected}>
           <AuthIcon name="lock" size={14} color={authColors.muted} />
-          <Text style={authStyles.caption}>Protected employee access</Text>
+          <Text style={authStyles.caption}>
+            {t('Protected employee access')}
+          </Text>
         </View>
       </View>
       <NeedHelpSheet visible={help} onClose={() => setHelp(false)} />
@@ -195,6 +208,7 @@ const styles = StyleSheet.create({
   countryLabel: { color: authColors.ink, fontSize: 11, fontWeight: '700' },
   form: { gap: 15 },
   phone: {
+    direction: 'ltr',
     minHeight: 58,
     flexDirection: 'row',
     alignItems: 'center',
@@ -217,6 +231,8 @@ const styles = StyleSheet.create({
   fieldError: { color: '#A52737', fontSize: 13 },
   code: { color: authColors.ink, fontSize: 15, fontWeight: '600' },
   input: {
+    textAlign: 'left',
+    writingDirection: 'ltr',
     flex: 1,
     minWidth: 0,
     color: authColors.ink,

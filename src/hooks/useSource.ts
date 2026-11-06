@@ -10,7 +10,7 @@ export function useSource<T>(route: string | null) {
     null,
   );
   const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(Boolean(route));
   const generation = useRef(0);
   const reload = useCallback(async () => {
     const current = ++generation.current;

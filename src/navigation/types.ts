@@ -4,7 +4,7 @@ import type {
   CompositeScreenProps,
   NavigatorScreenParams,
 } from '@react-navigation/native';
-import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
+import type { MaterialTopTabScreenProps } from '@react-navigation/material-top-tabs';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
 export type HomeStackParams = {
@@ -23,7 +23,7 @@ export type WorkspaceTabParams = {
 
 export type WorkspaceScreenProps<T extends keyof WorkspaceTabParams> =
   CompositeScreenProps<
-    BottomTabScreenProps<WorkspaceTabParams, T>,
+    MaterialTopTabScreenProps<WorkspaceTabParams, T>,
     NativeStackScreenProps<RootStackParams>
   >;
 

@@ -1,3 +1,5 @@
+import { t } from '../i18n/language';
+import { useLanguage } from '../i18n/preference';
 import React, { useEffect, useState } from 'react';
 import {
   Keyboard,
@@ -6,7 +8,8 @@ import {
   View,
   useWindowDimensions,
 } from 'react-native';
-import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import type { MaterialTopTabBarProps } from '@react-navigation/material-top-tabs';
 import {
   NavigationIcon,
   type NavigationIconName,
@@ -27,8 +30,9 @@ export function WorkspaceTabBar({
   state,
   navigation,
   descriptors,
-  insets,
-}: BottomTabBarProps): React.JSX.Element {
+}: MaterialTopTabBarProps): React.JSX.Element {
+  useLanguage();
+  const insets = useSafeAreaInsets();
   const { locked } = useWorkspaceInteraction();
   const { width } = useWindowDimensions();
   const left = Math.max(insets.left, 20);
@@ -75,7 +79,7 @@ export function WorkspaceTabBar({
                 accessibilityLabel={label}
                 accessibilityHint={
                   locked
-                    ? 'Available when attendance verification finishes'
+                    ? t('Available when attendance verification finishes')
                     : undefined
                 }
                 accessibilityState={{ selected, disabled: locked }}

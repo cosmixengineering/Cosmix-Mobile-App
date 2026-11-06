@@ -77,6 +77,13 @@ def enableProguardInReleaseBuilds = false
  * this variant is about 6MiB larger per architecture than default.
  */
 def jscFlavor = 'io.github.react-native-community:jsc-android:2026004.+'
+// Dedicated, separately installed LAN test APK. Only public CA resources belong here.
+def wifiResources = providers.gradleProperty("cosmixWifiUatResources").orNull
+def wifiOrigin = providers.gradleProperty("cosmixWifiUatOrigin").orNull
+if ((wifiResources == null) != (wifiOrigin == null) ||
+        (wifiOrigin != null && !(wifiOrigin ==~ /https:\/\/192\.168\.\d{1,3}\.\d{1,3}:\d{1,5}/))) {
+    throw new GradleException("LAN UAT requires an HTTPS private origin and matching Android CA resources.")
+}
 
 android {
     ndkVersion rootProject.ext.ndkVersion
@@ -86,6 +93,7 @@ android {
     namespace "com.cosmix.mobile"
     defaultConfig {
         applicationId "com.cosmix.mobile"
+        manifestPlaceholders.cosmixAppLabel = "@string/app_name"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
@@ -109,6 +117,7 @@ android {
         }
     }
     buildFeatures { buildConfig true }
+    if (wifiResources) sourceSets.debug.res.setSrcDirs([file(wifiResources)])
     signingConfigs {
         debug {
             storeFile file('debug.keystore')
@@ -127,6 +136,13 @@ android {
     buildTypes {
         debug {
             signingConfig signingConfigs.debug
+            if (wifiResources) {
+                applicationIdSuffix ".wifiuat"
+                versionNameSuffix "-wifi-uat"
+                buildConfigField "String", "COSMIX_API_BASE_URL", groovy.json.JsonOutput.toJson(wifiOrigin)
+                resValue "string", "wifi_uat_name", "Cosmix WiFi UAT"
+                manifestPlaceholders.cosmixAppLabel = "@string/wifi_uat_name"
+            }
         }
         release {
             signingConfig signingConfigs.release

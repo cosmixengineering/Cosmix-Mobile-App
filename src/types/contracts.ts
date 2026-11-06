@@ -1,5 +1,6 @@
 export type OtpChallenge = {
   challengeId: string;
+  uatCode?: string;
   expiresAt: string;
   resendAvailableAt: string;
   nextStep: 'enter_otp';

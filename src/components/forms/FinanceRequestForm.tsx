@@ -1,3 +1,5 @@
+import { t } from '../../i18n/language';
+import { useLanguage } from '../../i18n/preference';
 import React, { useState } from 'react';
 import { Text, View } from 'react-native';
 import { Field } from '../Controls';
@@ -17,15 +19,19 @@ export function FinanceRequestForm({
 }: {
   kind: 'advance' | 'loan';
 }): React.JSX.Element {
+  useLanguage();
   const [value, setValue] = useState('');
   const [requestedOn, setRequestedOn] = useState(businessToday);
   const [note, setNote] = useState('');
-  const title = kind === 'advance' ? 'Salary advance request' : 'Loan request';
+  const title =
+    kind === 'advance' ? t('Salary advance request') : t('Loan request');
   return (
     <SubmissionFrame
       service="loans"
       title={title}
-      description="Send a request to your company. Approved terms and repayment schedules will appear in Advances & loans."
+      description={t(
+        'Send a request to your company. Approved terms and repayment schedules will appear in Advances & loans.',
+      )}
       route="/api/v1/me/advances-loans/requests"
       revision={JSON.stringify([kind, value, requestedOn, note])}
       build={async () => {
@@ -43,7 +49,7 @@ export function FinanceRequestForm({
           summary: [
             title,
             amount(requestedAmount, 'PKR'),
-            `Requested on ${requestedOn}`,
+            t('Requested on {0}', requestedOn),
             cleanReason,
           ],
         };
@@ -51,9 +57,9 @@ export function FinanceRequestForm({
     >
       {disabled => (
         <View style={layout.card}>
-          <InfoRow label="Currency" value="PKR" />
+          <InfoRow label={t('Currency')} value="PKR" />
           <Field
-            label="Requested amount · PKR"
+            label={t('Requested amount · PKR')}
             value={value}
             onChangeText={setValue}
             keyboardType="decimal-pad"
@@ -61,17 +67,18 @@ export function FinanceRequestForm({
             maxLength={12}
           />
           <Text style={layout.muted}>
-            Enter 1 to 10,000,000 PKR. Approval and repayment terms are decided
-            by your company.
+            {t(
+              'Enter 1 to 10,000,000 PKR. Approval and repayment terms are decided by your company.',
+            )}
           </Text>
           <DateField
-            label="Requested date"
+            label={t('Requested date')}
             value={requestedOn}
             onChange={setRequestedOn}
             disabled={disabled}
           />
           <Field
-            label="Why do you need this request?"
+            label={t('Why do you need this request?')}
             value={note}
             onChangeText={setNote}
             multiline

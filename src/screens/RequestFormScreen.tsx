@@ -1,3 +1,5 @@
+import { t } from '../i18n/language';
+import { useLanguage } from '../i18n/preference';
 import React from 'react';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useSession } from '../app/AppProvider';
@@ -42,11 +44,16 @@ export function EmployeeRequestForm({
   kind: RequestKind;
   previousRequestId?: string;
 }): React.JSX.Element {
+  useLanguage();
   const auth = useSession();
   if (!canOpenService(serviceFor[kind], auth)) {
     return (
       <Screen>
-        <Notice message="Your company has not enabled this service for your current account." />
+        <Notice
+          message={t(
+            'Your company has not enabled this service for your current account.',
+          )}
+        />
       </Screen>
     );
   }
@@ -60,7 +67,9 @@ export function EmployeeRequestForm({
       <Screen>
         <Notice
           tone="info"
-          message="Leave applications need access to your dated shift. Ask HR to enable your own roster access. Your existing leave history is still available."
+          message={t(
+            'Leave applications need access to your dated shift. Ask HR to enable your own roster access. Your existing leave history is still available.',
+          )}
         />
       </Screen>
     );

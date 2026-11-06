@@ -15,7 +15,7 @@ export function useAttendanceData() {
   const [state, setState] = useState<AttendanceState | null>(null);
   const [history, setHistory] = useState<PunchReceipt[]>([]);
   const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(permitted);
   const generation = useRef(0);
   const refresh = useCallback(async () => {
     const current = ++generation.current;

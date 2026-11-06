@@ -1,3 +1,5 @@
+import { t } from '../../i18n/language';
+import { useLanguage } from '../../i18n/preference';
 import React, { useState } from 'react';
 import { Text, View } from 'react-native';
 import { Button, Field, Notice } from '../Controls';
@@ -19,6 +21,7 @@ import { layout } from '../../theme/theme';
 import { allowanceTitle } from '../../constants/services';
 
 export function AllowanceForm(): React.JSX.Element {
+  useLanguage();
   const [date, setDate] = useState(businessToday);
   const [kind, setKind] = useState('');
   const [note, setNote] = useState('');
@@ -37,8 +40,10 @@ export function AllowanceForm(): React.JSX.Element {
   return (
     <SubmissionFrame
       service="allowances"
-      title="Allowance claim"
-      description="Check the company's dated eligibility before sending your claim. The server determines the amount."
+      title={t('Allowance claim')}
+      description={t(
+        "Check the company's dated eligibility before sending your claim. The server determines the amount.",
+      )}
       route="/api/v1/me/allowances/claims"
       revision={JSON.stringify([date, kind, note, source.value])}
       ready={ready && !source.loading}
@@ -52,10 +57,10 @@ export function AllowanceForm(): React.JSX.Element {
           summary: [
             allowanceTitle(Number(kind)),
             date,
-            `Policy amount: ${amount(
-              selected.claimedAmount,
-              selected.currency,
-            )}`,
+            t(
+              'Policy amount: {0}',
+              amount(selected.claimedAmount, selected.currency),
+            ),
             clean,
           ],
         };
@@ -64,7 +69,7 @@ export function AllowanceForm(): React.JSX.Element {
       {disabled => (
         <View style={layout.card}>
           <DateField
-            label="Duty date"
+            label={t('Duty date')}
             value={date}
             onChange={value => {
               setDate(value);
@@ -74,7 +79,7 @@ export function AllowanceForm(): React.JSX.Element {
           />
           {source.error ? <Notice message={source.error} /> : null}
           <Button
-            title="Refresh eligibility"
+            title={t('Refresh eligibility')}
             secondary
             busy={source.loading}
             disabled={disabled}
@@ -82,12 +87,13 @@ export function AllowanceForm(): React.JSX.Element {
           />
           {source.value ? (
             <InfoRow
-              label="Company policy"
+              label={t('Company policy')}
               value={status(source.value.policyState)}
             />
           ) : null}
           <ChoiceField
-            label="Allowance"
+            loading={source.loading}
+            label={t('Allowance')}
             value={kind}
             onChange={setKind}
             disabled={disabled}
@@ -98,22 +104,25 @@ export function AllowanceForm(): React.JSX.Element {
           />
           {selected ? (
             <>
-              <InfoRow label="Eligibility" value={status(selected.state)} />
+              <InfoRow
+                label={t('Eligibility')}
+                value={status(selected.state)}
+              />
               <Text style={layout.body}>{text(selected.reason)}</Text>
               <InfoRow
-                label="Policy amount"
+                label={t('Policy amount')}
                 value={amount(selected.claimedAmount, selected.currency)}
               />
               {selected.claimExists === true ? (
                 <Notice
                   tone="info"
-                  message="A claim already exists for this duty cycle."
+                  message={t('A claim already exists for this duty cycle.')}
                 />
               ) : null}
             </>
           ) : null}
           <Field
-            label="Reason"
+            label={t('Reason')}
             value={note}
             onChangeText={setNote}
             editable={!disabled}

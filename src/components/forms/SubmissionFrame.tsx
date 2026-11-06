@@ -1,3 +1,5 @@
+import { t } from '../../i18n/language';
+import { useLanguage } from '../../i18n/preference';
 import React, { useEffect, useRef, useState } from 'react';
 import { BackHandler, Text, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
@@ -35,6 +37,7 @@ export function SubmissionFrame({
   onSubmitted?(): Promise<void>;
   children(disabled: boolean): React.ReactNode;
 }): React.JSX.Element {
+  useLanguage();
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParams>>();
   const mutation = useServiceMutation();
@@ -140,7 +143,7 @@ export function SubmissionFrame({
         <>
           {prepared ? (
             <View style={layout.card}>
-              <Text style={layout.heading}>Review your request</Text>
+              <Text style={layout.heading}>{t('Review your request')}</Text>
               {prepared.summary.map((line, index) => (
                 <Text key={index} style={layout.body}>
                   {line}
@@ -148,16 +151,18 @@ export function SubmissionFrame({
               ))}
               <Notice
                 tone="info"
-                message="This submits your request for company review. It does not approve leave, release money or change your employment."
+                message={t(
+                  'This submits your request for company review. It does not approve leave, release money or change your employment.',
+                )}
               />
               <Button
-                title="Submit request"
+                title={t('Submit request')}
                 busy={mutation.busy}
                 disabled={busy || !!mutation.pending}
                 onPress={() => send()}
               />
               <Button
-                title="Edit details"
+                title={t('Edit details')}
                 secondary
                 disabled={busy}
                 onPress={() => setPrepared(null)}
@@ -165,7 +170,7 @@ export function SubmissionFrame({
             </View>
           ) : (
             <Button
-              title={preparing ? 'Preparing review…' : 'Review request'}
+              title={preparing ? t('Preparing review…') : t('Review request')}
               busy={preparing}
               disabled={busy || !ready || !!mutation.pending}
               onPress={() => review()}
@@ -174,7 +179,7 @@ export function SubmissionFrame({
         </>
       ) : null}
       <Button
-        title={submitted ? 'Back to requests' : 'Back'}
+        title={submitted ? t('Back to requests') : t('Back')}
         secondary
         disabled={busy}
         onPress={() => navigation.goBack()}

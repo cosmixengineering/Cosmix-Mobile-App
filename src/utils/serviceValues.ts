@@ -1,3 +1,4 @@
+import { displayLocale, t } from '../i18n/language';
 import { AppError } from './errors';
 import { isRecord, isTimestamp } from './validation';
 import type { DataRecord } from '../types/selfService';
@@ -18,7 +19,7 @@ export function records(value: unknown, maximum = 1000): DataRecord[] {
   }
   return value;
 }
-export function text(value: unknown, fallback = 'Unavailable'): string {
+export function text(value: unknown, fallback = t('Unavailable')): string {
   return typeof value === 'string' && value.length <= 8000 && value.length > 0
     ? value
     : fallback;
@@ -31,16 +32,22 @@ export function amount(value: unknown, currency: unknown): string {
   const unit =
     typeof currency === 'string' && /^[A-Z]{3}$/.test(currency) ? currency : '';
   if (number === null || !unit) {
-    return 'Unavailable';
+    return t('Unavailable');
   }
-  return new Intl.NumberFormat('en-PK', {
+  return new Intl.NumberFormat(displayLocale('en-PK'), {
     style: 'currency',
     currency: unit,
     maximumFractionDigits: 2,
   }).format(number);
 }
 export function status(value: unknown): string {
-  const names = ['Pending', 'Approved', 'Returned', 'Rejected', 'Cancelled'];
+  const names = [
+    t('Pending'),
+    t('Approved'),
+    t('Returned'),
+    t('Rejected'),
+    t('Cancelled'),
+  ];
   if (
     typeof value === 'number' &&
     Number.isInteger(value) &&
@@ -49,9 +56,11 @@ export function status(value: unknown): string {
   ) {
     return names[value];
   }
-  return text(value)
-    .replace(/([a-z])([A-Z])/g, '$1 $2')
-    .replace(/_/g, ' ');
+  return t(
+    text(value)
+      .replace(/([a-z])([A-Z])/g, '$1 $2')
+      .replace(/_/g, ' '),
+  );
 }
 export function isPending(value: unknown): boolean {
   return value === 0 || value === 'Pending';
@@ -137,9 +146,9 @@ export function fraction(value: unknown): string {
     !/^\d+$/.test(value.denominator) ||
     /^0+$/.test(value.denominator)
   ) {
-    return 'Unavailable';
+    return t('Unavailable');
   }
   return value.denominator === '1'
-    ? `${value.numerator} days`
-    : `${value.numerator}/${value.denominator} days`;
+    ? t('{0} days', value.numerator)
+    : t('{0}/{1} days', value.numerator, value.denominator);
 }

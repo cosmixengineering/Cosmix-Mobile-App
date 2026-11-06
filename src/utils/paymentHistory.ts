@@ -1,3 +1,4 @@
+import { t } from '../i18n/language';
 import type { DataRecord, ServiceData } from '../types/selfService';
 import { AppError } from './errors';
 import { record, records, requireDate } from './serviceValues';
@@ -97,15 +98,15 @@ export function paymentHistoryPage(value: unknown, page: number): ServiceData {
 
 export function paymentStatus(value: unknown): string {
   const labels: Record<string, string> = {
-    NoPaymentDue: 'No payment due',
-    Unpaid: 'Unpaid',
-    Pending: 'Pending',
-    PartiallyPaid: 'Partially paid',
-    Paid: 'Paid · confirmed',
-    Posted: 'Posted · awaiting confirmation',
-    Confirmed: 'Confirmed',
-    Failed: 'Failed',
-    Reversed: 'Reversed',
+    NoPaymentDue: t('No payment due'),
+    Unpaid: t('Unpaid'),
+    Pending: t('Pending'),
+    PartiallyPaid: t('Partially paid'),
+    Paid: t('Paid · confirmed'),
+    Posted: t('Posted · awaiting confirmation'),
+    Confirmed: t('Confirmed'),
+    Failed: t('Failed'),
+    Reversed: t('Reversed'),
   };
-  return labels[String(value)] ?? 'Unavailable';
+  return labels[String(value)] ?? t('Unavailable');
 }

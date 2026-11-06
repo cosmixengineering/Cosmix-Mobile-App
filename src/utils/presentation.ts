@@ -1,3 +1,4 @@
+import { displayLocale, t } from '../i18n/language';
 import type { PunchReceipt } from '../types/contracts';
 import { AppError } from './errors';
 
@@ -26,7 +27,7 @@ export function historyWindow(
 
 export function localTime(value: string, timeZone?: string): string {
   try {
-    return new Intl.DateTimeFormat('en-GB', {
+    return new Intl.DateTimeFormat(displayLocale(), {
       day: '2-digit',
       month: 'short',
       hour: '2-digit',
@@ -34,7 +35,7 @@ export function localTime(value: string, timeZone?: string): string {
       timeZone,
     }).format(new Date(value));
   } catch {
-    return 'Time unavailable';
+    return t('Time unavailable');
   }
 }
 
@@ -42,13 +43,13 @@ export function outcomeLabel(outcome: string): string {
   return (
     (
       {
-        Accepted: 'Accepted',
-        AcceptedWithException: 'Accepted with exception',
-        QueuedForReview: 'Awaiting review',
-        Rejected: 'Not accepted',
-        Unverified: 'Not verified',
+        Accepted: t('Accepted'),
+        AcceptedWithException: t('Accepted with exception'),
+        QueuedForReview: t('Awaiting review'),
+        Rejected: t('Not accepted'),
+        Unverified: t('Not verified'),
       } as Record<string, string>
-    )[outcome] ?? 'Status unavailable'
+    )[outcome] ?? t('Status unavailable')
   );
 }
 
@@ -57,7 +58,7 @@ export function fullLocalTime(
   timeZone = 'Asia/Karachi',
 ): string {
   try {
-    return new Intl.DateTimeFormat('en-GB', {
+    return new Intl.DateTimeFormat(displayLocale(), {
       day: '2-digit',
       month: 'short',
       year: 'numeric',
@@ -68,20 +69,29 @@ export function fullLocalTime(
       timeZone,
     }).format(new Date(value));
   } catch {
-    return 'Time unavailable';
+    return t('Time unavailable');
   }
 }
 
 export function receiptMessage(receipt: PunchReceipt): string {
-  const action = receipt.action === 'CheckIn' ? 'Check In' : 'Check Out';
+  const action = receipt.action === 'CheckIn' ? t('Check In') : t('Check Out');
   if (receipt.outcome === 'Accepted') {
-    return `${action} accepted by the company server.`;
+    return t('{0} accepted by the company server.', action);
   }
   if (receipt.outcome === 'AcceptedWithException') {
-    return `${action} recorded with an exception. Contact your supervisor for details.`;
+    return t(
+      '{0} recorded with an exception. Contact your supervisor for details.',
+      action,
+    );
   }
   if (receipt.outcome === 'QueuedForReview') {
-    return `${action} received for review. Attendance has not been confirmed as accepted.`;
+    return t(
+      '{0} received for review. Attendance has not been confirmed as accepted.',
+      action,
+    );
   }
-  return `${action} was not accepted. Contact your supervisor before trying again.`;
+  return t(
+    '{0} was not accepted. Contact your supervisor before trying again.',
+    action,
+  );
 }

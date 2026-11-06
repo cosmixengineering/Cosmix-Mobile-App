@@ -7,6 +7,8 @@ const nativeConfig = NativeModules.CosmixReleaseConfiguration;
 // build type still selects the local HTTPS endpoint used by the emulator.
 const debugClient = __DEV__ || nativeConfig?.isDebugBuild === true;
 const releaseUrl: unknown = nativeConfig?.apiBaseUrl;
+const wifiUat =
+  nativeConfig?.wifiUat === true && nativeConfig?.isDebugBuild === true;
 if (
   !debugClient &&
   (typeof releaseUrl !== 'string' ||
@@ -15,7 +17,9 @@ if (
   throw new Error('Approved production API configuration is missing.');
 }
 export const environment = {
-  apiBaseUrl: debugClient ? 'https://localhost:7241' : (releaseUrl as string),
+  apiBaseUrl:
+    debugClient && !wifiUat ? 'https://localhost:7241' : (releaseUrl as string),
+  wifiUat,
   companyName: 'Cosmix',
   secureStoragePrefix: 'com.cosmix.mobile.v1',
 } as const;

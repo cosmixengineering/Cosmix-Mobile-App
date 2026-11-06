@@ -1,110 +1,293 @@
-import React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import React, { useState } from 'react';
+import {
+  Alert,
+  Keyboard,
+  Pressable,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
+import { t } from '../i18n/language';
+import { useLanguage } from '../i18n/preference';
 import { useSession } from '../app/AppProvider';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Screen } from '../components/Controls';
+import { ServiceIcon } from '../components/ServiceIcon';
 import { canOpenService, employeeServices } from '../constants/services';
 import type { WorkspaceScreenProps } from '../navigation/types';
-import { colors, layout } from '../theme/theme';
+import type { ServiceKey } from '../types/selfService';
+import { colors } from '../theme/theme';
 
+const sections: { title: string; keys: ServiceKey[] }[] = [
+  {
+    title: 'Time & attendance',
+    keys: ['punches', 'leaves', 'corrections', 'calendar', 'shift', 'overtime'],
+  },
+  { title: 'Pay & claims', keys: ['loans', 'allowances', 'vehicles'] },
+  { title: 'Employment', keys: ['resignation'] },
+  {
+    title: 'More services',
+    keys: [
+      'finances',
+      'payroll',
+      'payments',
+      'encashment',
+      'profile',
+      'requests',
+      'notifications',
+    ],
+  },
+];
 export function ServicesScreen({
   navigation,
 }: WorkspaceScreenProps<'Services'>): React.JSX.Element {
+  useLanguage();
   const auth = useSession();
+  const [search, setSearch] = useState('');
+  const query = search.trim().toLocaleLowerCase();
+  const groups = sections
+    .map(section => ({
+      ...section,
+      items: section.keys.flatMap(key =>
+        employeeServices.filter(
+          item =>
+            item.key === key && item.title.toLocaleLowerCase().includes(query),
+        ),
+      ),
+    }))
+    .filter(section => section.items.length);
+  function open(key: ServiceKey) {
+    Keyboard.dismiss();
+    if (!canOpenService(key, auth)) {
+      Alert.alert(
+        t('Restricted access'),
+        t(
+          'Your company controls access to each service. Contact HR if a service you need is unavailable.',
+        ),
+      );
+      return;
+    }
+    switch (key) {
+      case 'punches':
+      case 'calendar':
+      case 'payroll':
+      case 'payments':
+        navigation.navigate('History', { category: key });
+        break;
+      case 'shift':
+        navigation.navigate('Dashboard', {
+          screen: 'MySchedule',
+          initial: false,
+        });
+        break;
+      case 'profile':
+        navigation.navigate('Profile');
+        break;
+      default:
+        navigation.navigate('ServiceDetail', { service: key });
+    }
+  }
   return (
-    <Screen>
-      <View style={styles.hero}>
-        <Text style={styles.heroTitle}>Employee services</Text>
-        <Text style={styles.heroText}>
-          Requests, work records and company updates
+    <SafeAreaView edges={['top']} style={s.page}>
+      <View style={s.header}>
+        <Text accessibilityRole="header" style={s.headerText}>
+          {t('Services')}
         </Text>
       </View>
-      <View style={styles.grid}>
-        {employeeServices.map(service => {
-          const permitted = canOpenService(service.key, auth);
-          return (
+      <Screen>
+        <View style={s.search}>
+          <ServiceIcon name="search" size={22} />
+          <TextInput
+            accessibilityLabel={t('Search services')}
+            placeholder={t('Search services')}
+            placeholderTextColor={colors.muted}
+            style={s.input}
+            value={search}
+            onChangeText={setSearch}
+            autoCorrect={false}
+            returnKeyType="search"
+          />
+          {!!search && (
             <Pressable
-              key={service.key}
               accessibilityRole="button"
-              accessibilityState={{ disabled: !permitted }}
-              disabled={!permitted}
-              onPress={() =>
-                ['punches', 'calendar', 'payroll', 'payments'].includes(
-                  service.key,
-                )
-                  ? navigation.navigate('History', { category: service.key })
-                  : service.key === 'shift'
-                  ? navigation.navigate('Dashboard', {
-                      screen: 'MySchedule',
-                      initial: false,
-                    })
-                  : service.key === 'profile'
-                  ? navigation.navigate('Profile')
-                  : navigation.navigate('ServiceDetail', {
-                      service: service.key,
-                    })
-              }
-              style={({ pressed }) => [
-                styles.tile,
-                !permitted && styles.locked,
-                pressed && styles.pressed,
-              ]}
+              accessibilityLabel={t('Clear search')}
+              hitSlop={7}
+              onPress={() => setSearch('')}
+              style={s.clear}
             >
-              <View style={styles.mark}>
-                <Text style={styles.markText}>{service.mark}</Text>
-              </View>
-              <View style={styles.copy}>
-                <Text style={styles.title}>{service.title}</Text>
-                <Text style={styles.description}>{service.description}</Text>
-              </View>
-              <Text style={permitted ? styles.link : styles.lockedText}>
-                {permitted ? '›' : 'Restricted'}
-              </Text>
+              <ServiceIcon name="clear" size={17} />
             </Pressable>
-          );
-        })}
-      </View>
-      <Text style={layout.muted}>
-        Your company controls access to each service. Contact HR if a service
-        you need is unavailable.
-      </Text>
-    </Screen>
+          )}
+        </View>
+        {groups.map(({ title, items }) => (
+          <View key={title} style={s.section}>
+            <Text accessibilityRole="header" style={s.heading}>
+              {t(title)}
+            </Text>
+            <View style={s.card}>
+              {items.map(service => {
+                const allowed = canOpenService(service.key, auth);
+                const wide = service.key === 'resignation';
+                return (
+                  <Pressable
+                    key={service.key}
+                    accessibilityRole="button"
+                    accessibilityLabel={
+                      allowed
+                        ? service.title
+                        : t('{0}, restricted access', service.title)
+                    }
+                    onPress={() => open(service.key)}
+                    style={({ pressed }) => [
+                      wide ? s.row : s.tile,
+                      pressed && s.pressed,
+                    ]}
+                  >
+                    <View
+                      style={[
+                        s.icon,
+                        allowed && s.activeIcon,
+                        wide && s.rowIcon,
+                      ]}
+                    >
+                      <ServiceIcon name={service.key} light={allowed} />
+                      {!allowed && !wide && (
+                        <View style={s.badge}>
+                          <ServiceIcon name="lock" size={14} />
+                        </View>
+                      )}
+                    </View>
+                    {wide ? (
+                      <View style={s.copy}>
+                        <Text style={s.title}>{service.title}</Text>
+                        <Text style={s.note}>
+                          {t('Submit and track your request')}
+                        </Text>
+                      </View>
+                    ) : (
+                      <Text style={[s.title, s.center]}>
+                        {service.title}
+                        {allowed ? ' ›' : ''}
+                      </Text>
+                    )}
+                    {wide &&
+                      (!allowed ? (
+                        <ServiceIcon name="lock" size={18} />
+                      ) : (
+                        <Text style={s.title}>›</Text>
+                      ))}
+                  </Pressable>
+                );
+              })}
+            </View>
+            {title === 'Employment' &&
+              groups.some(group =>
+                group.items.some(service => !canOpenService(service.key, auth)),
+              ) && (
+                <View style={s.legend}>
+                  <ServiceIcon name="lock" size={16} />
+                  <Text style={s.note}>{t('Restricted access')}</Text>
+                </View>
+              )}
+          </View>
+        ))}
+        {!groups.length && (
+          <Text accessibilityLiveRegion="polite" style={s.note}>
+            {t('No services found')}
+          </Text>
+        )}
+      </Screen>
+    </SafeAreaView>
   );
 }
-const styles = StyleSheet.create({
-  hero: {
-    padding: 14,
-    borderRadius: 12,
-    backgroundColor: colors.primary,
-    gap: 4,
+const s = StyleSheet.create({
+  page: { flex: 1, backgroundColor: colors.white },
+  header: {
+    paddingHorizontal: 18,
+    paddingVertical: 10,
+    backgroundColor: colors.white,
   },
-  heroTitle: { fontSize: 18, fontWeight: '700', color: colors.white },
-  heroText: { fontSize: 13, lineHeight: 18, color: '#E5EDFA' },
-  grid: { gap: 6 },
-  tile: {
+  headerText: { color: colors.navy, fontWeight: '700', fontSize: 24 },
+  search: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 10,
-    borderRadius: 11,
-    borderWidth: 1,
-    borderColor: colors.line,
-    backgroundColor: colors.white,
+    backgroundColor: '#E7EDF3',
+    borderRadius: 12,
+    paddingHorizontal: 13,
+    minHeight: 44,
     gap: 10,
-    minHeight: 52,
   },
-  mark: {
-    width: 32,
-    height: 32,
-    borderRadius: 9,
-    backgroundColor: colors.mint,
+  input: { flex: 1, paddingVertical: 9, fontSize: 15, color: colors.navy },
+  clear: { padding: 5 },
+  section: { gap: 9, marginTop: 6 },
+  heading: {
+    fontSize: 17,
+    fontWeight: '700',
+    color: '#344158',
+    marginStart: 2,
+  },
+  card: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    backgroundColor: colors.white,
+    borderRadius: 15,
+    paddingVertical: 4,
+  },
+  tile: {
+    width: '33.3333%',
+    minHeight: 101,
+    paddingHorizontal: 4,
+    paddingVertical: 10,
+    alignItems: 'center',
+    gap: 7,
+  },
+  icon: {
+    width: 55,
+    height: 55,
+    borderRadius: 13,
+    backgroundColor: '#E3F1F8',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  markText: { fontSize: 13, fontWeight: '800', color: colors.teal },
-  copy: { flex: 1, gap: 2 },
-  title: { fontSize: 14, fontWeight: '700', color: colors.navy },
-  description: { fontSize: 12, lineHeight: 17, color: colors.muted },
-  link: { fontSize: 21, color: colors.primary },
-  locked: { opacity: 0.6 },
-  lockedText: { color: colors.muted, fontSize: 11 },
-  pressed: { opacity: 0.8 },
+  activeIcon: { backgroundColor: '#10487C' },
+  badge: {
+    position: 'absolute',
+    bottom: -2,
+    end: -3,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    elevation: 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.white,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.line,
+  },
+  title: {
+    fontWeight: '700',
+    fontSize: 14,
+    lineHeight: 17,
+    color: colors.navy,
+  },
+  center: { textAlign: 'center', maxWidth: 104 },
+  pressed: { opacity: 0.65 },
+  row: {
+    width: '100%',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingVertical: 7,
+    paddingHorizontal: 14,
+  },
+  rowIcon: { width: 46, height: 46 },
+  copy: { flex: 1, gap: 3 },
+  note: { fontSize: 13, color: colors.muted },
+  legend: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 7,
+    paddingVertical: 7,
+  },
 });

@@ -30,6 +30,8 @@
 	<string>Verify your face and liveness when checking in for work.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Validate your current work location when you submit attendance.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Choose your employee profile photo.</string>
 	<key>NSAppTransportSecurity</key>
 	<dict>
 	  <!-- Do not change NSAllowsArbitraryLoads to true, or you will risk app rejection! -->

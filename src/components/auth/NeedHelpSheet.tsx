@@ -1,3 +1,5 @@
+import { t } from '../../i18n/language';
+import { useLanguage } from '../../i18n/preference';
 import React from 'react';
 import {
   Keyboard,
@@ -21,6 +23,7 @@ export function NeedHelpSheet({
   visible: boolean;
   onClose(): void;
 }): React.JSX.Element {
+  useLanguage();
   const motion = useAuthMotion();
   return (
     <Modal
@@ -36,33 +39,40 @@ export function NeedHelpSheet({
               <AuthIcon name="help" size={28} />
             </View>
             <Text accessibilityRole="header" style={authStyles.heading}>
-              Let’s get you signed in.
+              {t('Let’s get you signed in.')}
             </Text>
             <Text style={authStyles.body}>
-              Your HR team or supervisor can help with employee access.
+              {t('Your HR team or supervisor can help with employee access.')}
             </Text>
             <View style={authStyles.stack}>
-              <Text style={authStyles.label}>Check your registered number</Text>
+              <Text style={authStyles.label}>
+                {t('Check your registered number')}
+              </Text>
               <Text style={authStyles.body}>
-                Use the Pakistan mobile number recorded with HR. This app is for
-                existing company accounts.
+                {t(
+                  'Use the Pakistan mobile number recorded with HR. This app is for existing company accounts.',
+                )}
               </Text>
             </View>
             <View style={authStyles.stack}>
-              <Text style={authStyles.label}>Waiting for a code?</Text>
+              <Text style={authStyles.label}>{t('Waiting for a code?')}</Text>
               <Text style={authStyles.body}>
-                Check your mobile signal and SMS inbox. When the countdown ends,
-                select Send again. Never share the code.
+                {t(
+                  'Check your mobile signal and SMS inbox. When the countdown ends, select Send again. Never share the code.',
+                )}
               </Text>
             </View>
             <View style={authStyles.stack}>
-              <Text style={authStyles.label}>Still unable to sign in?</Text>
+              <Text style={authStyles.label}>
+                {t('Still unable to sign in?')}
+              </Text>
               <Text style={authStyles.body}>
-                Ask HR to check your account, SMS delivery and device approval.
-                Only your company can update your registered number or access.
+                {t(
+                  'Ask HR to check your account, SMS delivery and device approval. Only your company can update your registered number or access.',
+                )}
               </Text>
             </View>
-            <AuthButton title="Got it" onPress={onClose} />
+            <AuthButton title={t('Got it')} onPress={onClose} />
           </ScrollView>
         </View>
       </SafeAreaView>
@@ -77,10 +87,11 @@ export function NeedHelpLink({
   onPress(): void;
   disabled?: boolean;
 }): React.JSX.Element {
+  useLanguage();
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel="Need help"
+      accessibilityLabel={t('Need help')}
       accessibilityState={{ disabled }}
       disabled={disabled}
       onPress={() => {
@@ -89,8 +100,8 @@ export function NeedHelpLink({
       }}
       style={({ pressed }) => [styles.help, pressed && styles.pressed]}
     >
-      <Text style={authStyles.caption}>Having trouble signing in? </Text>
-      <Text style={authStyles.link}>Need help</Text>
+      <Text style={authStyles.caption}>{t('Having trouble signing in?')}</Text>
+      <Text style={authStyles.link}>{t('Need help')}</Text>
     </Pressable>
   );
 }
